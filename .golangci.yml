@@ -1,0 +1,97 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+  tests: true
+linters:
+  enable:
+    - dupl
+    - gocritic
+    - gocyclo
+    - gosec
+    - misspell
+    - nolintlint
+    - revive
+    - unconvert
+    - unparam
+    - whitespace
+  settings:
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+        - experimental
+        - opinionated
+    gocyclo:
+      min-complexity: 15
+    gosec:
+      excludes:
+        - G204
+        - G304
+      config:
+        G301: "0644"
+        G302: "0600"
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: exported
+          severity: warning
+        - name: package-comments
+          severity: warning
+        - name: indent-error-flow
+          severity: warning
+        - name: if-return
+          severity: warning
+        - name: error-return
+          severity: warning
+        - name: error-strings
+          severity: warning
+        - name: error-naming
+          severity: warning
+        - name: unexported-return
+          severity: warning
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupl
+          - gocritic
+          - gosec
+          - errcheck
+        path: _test\.go
+      - linters:
+          - gocyclo
+        path: cmd/
+      - linters:
+          - gosec
+        text: 'G204:'
+      - linters:
+          - govet
+        text: 'shadow:'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
