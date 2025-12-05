@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+project_name: gcloudctx
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: gcloudctx
+    main: .
+    binary: gcloudctx
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/Okabe-Junya/gcloudctx/cmd.Version={{.Version}}
+      - -X github.com/Okabe-Junya/gcloudctx/cmd.Commit={{.Commit}}
+      - -X github.com/Okabe-Junya/gcloudctx/cmd.Date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+  groups:
+    - title: "New Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "Performance Improvements"
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "Other Changes"
+      order: 999
+
+release:
+  github:
+    owner: Okabe-Junya
+    name: gcloudctx
+  draft: false
+  prerelease: auto
+  mode: append
+  name_template: "v{{ .Version }}"
+  footer: |
+    ## Installation
+
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew install Okabe-Junya/tap/gcloudctx
+    ```
+
+    ### Go Install
+    ```bash
+    go install github.com/Okabe-Junya/gcloudctx@v{{ .Version }}
+    ```
+
+    ### Manual Download
+    Download the appropriate archive for your platform from the assets below.
+
+brews:
+  - name: gcloudctx
+    repository:
+      owner: Okabe-Junya
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/Okabe-Junya/gcloudctx"
+    description: "Fast way to switch between gcloud configurations, inspired by kubectx"
+    license: "MIT"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    install: |
+      bin.install "gcloudctx"
+    test: |
+      system "#{bin}/gcloudctx", "--version"
+    extra_install: |
+      generate_completions_from_executable(bin/"gcloudctx", "completion", base_name: "gcloudctx")
