@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -240,5 +241,57 @@ func cleanupConfiguration(name string) error {
 	if err := DeleteConfiguration(name); err != nil {
 		return fmt.Errorf("failed to cleanup configuration %q: %w", name, err)
 	}
+	return nil
+}
+
+// getActiveConfigurationFromList finds the active configuration from a list
+// This is a pure function for easier testing
+func getActiveConfigurationFromList(configs []Configuration) (*Configuration, error) {
+	for i := range configs {
+		if configs[i].IsActive {
+			return &configs[i], nil
+		}
+	}
+	return nil, fmt.Errorf("no active configuration found")
+}
+
+// findConfigurationByName finds a configuration by name from a list
+// Returns the configuration and a boolean indicating if it was found
+func findConfigurationByName(configs []Configuration, name string) (*Configuration, bool) {
+	for i := range configs {
+		if configs[i].Name == name {
+			return &configs[i], true
+		}
+	}
+	return nil, false
+}
+
+// configurationExistsInList checks if a configuration exists in a list
+func configurationExistsInList(configs []Configuration, name string) bool {
+	_, found := findConfigurationByName(configs, name)
+	return found
+}
+
+// configNameRegex validates configuration names
+// Must start with a letter, contain only alphanumeric, hyphens, and underscores
+var configNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
+
+// MaxConfigNameLength is the maximum allowed length for a configuration name
+const MaxConfigNameLength = 63
+
+// ValidateConfigurationName validates a configuration name
+func ValidateConfigurationName(name string) error {
+	if name == "" {
+		return fmt.Errorf("configuration name cannot be empty")
+	}
+
+	if len(name) > MaxConfigNameLength {
+		return fmt.Errorf("configuration name cannot exceed %d characters", MaxConfigNameLength)
+	}
+
+	if !configNameRegex.MatchString(name) {
+		return fmt.Errorf("configuration name must start with a letter and contain only alphanumeric characters, hyphens, and underscores")
+	}
+
 	return nil
 }
