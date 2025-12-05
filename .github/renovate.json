@@ -6,61 +6,96 @@
     ":preserveSemverRanges"
   ],
   "timezone": "Asia/Tokyo",
-  "schedule": ["after 3am and before 6am on monday"],
+  "schedule": [
+    "after 3am and before 6am on monday"
+  ],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 5,
   "dependencyDashboard": true,
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "commitMessagePrefix": "chore(deps):",
   "packageRules": [
     {
       "description": "Go modules configuration",
-      "matchCategories": ["golang"],
-      "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"]
+      "matchCategories": [
+        "golang"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths"
+      ]
     },
     {
       "description": "Group Go version updates",
       "groupName": "Go version",
-      "matchDatasources": ["golang-version"]
+      "matchDatasources": [
+        "golang-version"
+      ]
     },
     {
       "description": "Group golang.org/x packages",
       "groupName": "golang.org/x packages",
-      "matchPackagePatterns": ["^golang.org/x/"],
-      "automerge": true
+      "automerge": true,
+      "matchPackageNames": [
+        "/^golang.org/x//"
+      ]
     },
     {
       "description": "GitHub Actions - pin digests for security",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "pinDigests": true
     },
     {
       "description": "Major updates - require manual review",
-      "matchUpdateTypes": ["major"],
-      "labels": ["dependencies", "major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "dependencies",
+        "major"
+      ],
       "minimumReleaseAge": "7 days",
       "automerge": false
     },
     {
       "description": "Minor updates",
-      "matchUpdateTypes": ["minor"],
-      "labels": ["dependencies", "minor"],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "labels": [
+        "dependencies",
+        "minor"
+      ],
       "minimumReleaseAge": "3 days",
       "automerge": true,
       "automergeType": "pr"
     },
     {
       "description": "Patch updates - auto-merge",
-      "matchUpdateTypes": ["patch"],
-      "labels": ["dependencies", "patch"],
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "labels": [
+        "dependencies",
+        "patch"
+      ],
       "minimumReleaseAge": "1 day",
       "automerge": true,
       "automergeType": "pr"
     },
     {
       "description": "Pin updates",
-      "matchUpdateTypes": ["pin"],
-      "labels": ["dependencies", "pin"],
+      "matchUpdateTypes": [
+        "pin"
+      ],
+      "labels": [
+        "dependencies",
+        "pin"
+      ],
       "automerge": true
     }
   ],
@@ -68,13 +103,20 @@
     {
       "description": "Go install commands in YAML files",
       "customType": "regex",
-      "fileMatch": ["\\.ya?ml$"],
-      "matchStrings": ["go install (?<depName>[^@]+?)@(?<currentValue>.+?)\\n"],
+      "managerFilePatterns": [
+        "/\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "go install (?<depName>[^@]+?)@(?<currentValue>.+?)\\n"
+      ],
       "datasourceTemplate": "go"
     }
   ],
   "vulnerabilityAlerts": {
     "enabled": true,
-    "labels": ["dependencies", "security"]
+    "labels": [
+      "dependencies",
+      "security"
+    ]
   }
 }
