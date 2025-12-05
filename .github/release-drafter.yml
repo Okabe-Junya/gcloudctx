@@ -61,11 +61,14 @@ autolabeler:
       - "/^docs/i"
   - label: "chore"
     title:
-      - "/^chore/i"
+      - "/^chore(?!\\(deps\\))/i"
   - label: "dependencies"
     title:
       - "/^build\\(deps\\)/i"
       - "/^chore\\(deps\\)/i"
+    branch:
+      - "/^renovate\\//i"
+      - "/^dependabot\\//i"
 
 template: |
   ## Changes

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":preserveSemverRanges"
+  ],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["after 3am and before 6am on monday"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  "packageRules": [
+    {
+      "description": "Go modules configuration",
+      "matchCategories": ["golang"],
+      "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"]
+    },
+    {
+      "description": "Group Go version updates",
+      "groupName": "Go version",
+      "matchDatasources": ["golang-version"]
+    },
+    {
+      "description": "Group golang.org/x packages",
+      "groupName": "golang.org/x packages",
+      "matchPackagePatterns": ["^golang.org/x/"],
+      "automerge": true
+    },
+    {
+      "description": "GitHub Actions - pin digests for security",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Major updates - require manual review",
+      "matchUpdateTypes": ["major"],
+      "labels": ["dependencies", "major"],
+      "minimumReleaseAge": "7 days",
+      "automerge": false
+    },
+    {
+      "description": "Minor updates",
+      "matchUpdateTypes": ["minor"],
+      "labels": ["dependencies", "minor"],
+      "minimumReleaseAge": "3 days",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Patch updates - auto-merge",
+      "matchUpdateTypes": ["patch"],
+      "labels": ["dependencies", "patch"],
+      "minimumReleaseAge": "1 day",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Pin updates",
+      "matchUpdateTypes": ["pin"],
+      "labels": ["dependencies", "pin"],
+      "automerge": true
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Go install commands in YAML files",
+      "customType": "regex",
+      "fileMatch": ["\\.ya?ml$"],
+      "matchStrings": ["go install (?<depName>[^@]+?)@(?<currentValue>.+?)\\n"],
+      "datasourceTemplate": "go"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["dependencies", "security"]
+  }
+}
