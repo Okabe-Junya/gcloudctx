@@ -15,8 +15,12 @@ import (
 )
 
 var (
-	// Version is set during build
+	// Version is the version of the application, set during build via ldflags
 	Version = "dev"
+	// Commit is the git commit hash, set during build via ldflags
+	Commit = "none"
+	// Date is the build date, set during build via ldflags
+	Date = "unknown"
 
 	// Flags
 	listFlag        bool
@@ -41,7 +45,7 @@ Examples:
   gcloudctx -l                 # List all configurations
   gcloudctx -i                 # Interactive selection with fzf
   gcloudctx my-config --sync-adc  # Switch and sync ADC`,
-	Version:               Version,
+	Version:               buildVersionString(),
 	RunE:                  runRoot,
 	Args:                  cobra.MaximumNArgs(1),
 	ValidArgsFunction:     completeConfigNames,
@@ -245,4 +249,16 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+// buildVersionString returns a formatted version string including commit and date
+func buildVersionString() string {
+	result := Version
+	if Commit != "none" {
+		result += " (commit: " + Commit[:min(7, len(Commit))] + ")"
+	}
+	if Date != "unknown" {
+		result += " built at " + Date
+	}
+	return result
 }
