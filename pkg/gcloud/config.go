@@ -153,6 +153,39 @@ func DeleteConfiguration(name string) error {
 	return nil
 }
 
+// CloneConfiguration creates a new configuration by copying properties from an existing one
+func CloneConfiguration(sourceName, targetName string) error {
+	if !ConfigurationExists(sourceName) {
+		return fmt.Errorf("source configuration %q does not exist", sourceName)
+	}
+
+	if ConfigurationExists(targetName) {
+		return fmt.Errorf("target configuration %q already exists", targetName)
+	}
+
+	// Get the source configuration details
+	sourceConfig, err := GetConfigurationInfo(sourceName)
+	if err != nil {
+		return err
+	}
+
+	// Create the new configuration
+	if err := CreateConfiguration(targetName); err != nil {
+		return err
+	}
+
+	// Copy properties to new configuration
+	if err := copyConfigProperties(sourceConfig, targetName); err != nil {
+		// Clean up on failure
+		if cleanupErr := cleanupConfiguration(targetName); cleanupErr != nil {
+			return fmt.Errorf("failed to copy properties: %w (cleanup also failed: %v)", err, cleanupErr)
+		}
+		return fmt.Errorf("failed to copy properties: %w", err)
+	}
+
+	return nil
+}
+
 // RenameConfiguration renames a gcloud configuration
 func RenameConfiguration(oldName, newName string) error {
 	if !ConfigurationExists(oldName) {
