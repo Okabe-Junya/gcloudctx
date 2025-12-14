@@ -24,13 +24,14 @@ var (
 	Date = "unknown"
 
 	// Flags
-	listFlag        bool
-	currentFlag     bool
-	interactiveFlag bool
-	syncADCFlag     bool
-	impersonateFlag string
-	showInfoFlag    bool
-	noColorFlag     bool
+	listFlag         bool
+	currentFlag      bool
+	interactiveFlag  bool
+	syncADCFlag      bool
+	impersonateFlag  string
+	showInfoFlag     bool
+	noColorFlag      bool
+	outputFormatFlag string
 )
 
 var rootCmd = &cobra.Command{
@@ -61,6 +62,7 @@ func init() {
 	rootCmd.Flags().StringVar(&impersonateFlag, "impersonate-service-account", "", "Service account to impersonate for ADC")
 	rootCmd.Flags().BoolVar(&showInfoFlag, "info", false, "Show detailed configuration information")
 	rootCmd.Flags().BoolVar(&noColorFlag, "no-color", false, "Disable colored output")
+	rootCmd.Flags().StringVarP(&outputFormatFlag, "output", "o", "", "Output format (json, yaml, wide, name)")
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
@@ -118,8 +120,14 @@ func listConfigurations() error {
 		return nil
 	}
 
-	output.PrintConfigurations(configs, !noColorFlag)
-	return nil
+	// Validate and use output format
+	format, err := output.ValidateOutputFormat(outputFormatFlag)
+	if err != nil {
+		output.PrintError(err.Error(), !noColorFlag)
+		return err
+	}
+
+	return output.PrintConfigurationsWithFormat(configs, format, !noColorFlag)
 }
 
 func showCurrentConfiguration() error {

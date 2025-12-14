@@ -3,11 +3,25 @@
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
 	"github.com/fatih/color"
+	"gopkg.in/yaml.v3"
+)
+
+// Format represents the output format type
+type Format string
+
+// Output format constants
+const (
+	FormatDefault Format = ""
+	FormatJSON    Format = "json"
+	FormatYAML    Format = "yaml"
+	FormatWide    Format = "wide"
+	FormatName    Format = "name"
 )
 
 // PrintConfigurations prints all configurations in a formatted way
@@ -189,4 +203,151 @@ func removeANSICodes(s string) string {
 	}
 
 	return result.String()
+}
+
+// ConfigOutput represents configuration data for JSON/YAML output
+type ConfigOutput struct {
+	Name     string `json:"name" yaml:"name"`
+	IsActive bool   `json:"is_active" yaml:"is_active"`
+	Account  string `json:"account,omitempty" yaml:"account,omitempty"`
+	Project  string `json:"project,omitempty" yaml:"project,omitempty"`
+	Region   string `json:"region,omitempty" yaml:"region,omitempty"`
+	Zone     string `json:"zone,omitempty" yaml:"zone,omitempty"`
+}
+
+// PrintConfigurationsWithFormat prints configurations in the specified format
+func PrintConfigurationsWithFormat(configs []gcloud.Configuration, format Format, useColor bool) error {
+	switch format {
+	case FormatJSON:
+		return printConfigurationsJSON(configs)
+	case FormatYAML:
+		return printConfigurationsYAML(configs)
+	case FormatWide:
+		printConfigurationsWide(configs, useColor)
+		return nil
+	case FormatName:
+		printConfigurationsName(configs)
+		return nil
+	default:
+		PrintConfigurations(configs, useColor)
+		return nil
+	}
+}
+
+func printConfigurationsJSON(configs []gcloud.Configuration) error {
+	output := make([]ConfigOutput, len(configs))
+	for i, c := range configs {
+		output[i] = ConfigOutput{
+			Name:     c.Name,
+			IsActive: c.IsActive,
+			Account:  c.Properties.Core.Account,
+			Project:  c.Properties.Core.Project,
+			Region:   c.Properties.Compute.Region,
+			Zone:     c.Properties.Compute.Zone,
+		}
+	}
+	data, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
+	return nil
+}
+
+func printConfigurationsYAML(configs []gcloud.Configuration) error {
+	output := make([]ConfigOutput, len(configs))
+	for i, c := range configs {
+		output[i] = ConfigOutput{
+			Name:     c.Name,
+			IsActive: c.IsActive,
+			Account:  c.Properties.Core.Account,
+			Project:  c.Properties.Core.Project,
+			Region:   c.Properties.Compute.Region,
+			Zone:     c.Properties.Compute.Zone,
+		}
+	}
+	data, err := yaml.Marshal(output)
+	if err != nil {
+		return err
+	}
+	fmt.Print(string(data))
+	return nil
+}
+
+func printConfigurationsWide(configs []gcloud.Configuration, useColor bool) {
+	if !useColor {
+		color.NoColor = true
+	}
+
+	cyan := color.New(color.FgCyan).SprintFunc()
+	yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
+	gray := color.New(color.FgHiBlack).SprintFunc()
+	bold := color.New(color.Bold).SprintFunc()
+
+	// Print header
+	fmt.Printf("%s  %-20s  %-30s  %-25s  %-15s  %s\n",
+		bold(" "),
+		bold("NAME"),
+		bold("ACCOUNT"),
+		bold("PROJECT"),
+		bold("REGION"),
+		bold("ZONE"))
+
+	for _, config := range configs {
+		marker := " "
+		nameColor := cyan
+		if config.IsActive {
+			marker = "*"
+			nameColor = yellow
+		}
+
+		account := config.Properties.Core.Account
+		if account == "" {
+			account = gray("-")
+		}
+		project := config.Properties.Core.Project
+		if project == "" {
+			project = gray("-")
+		}
+		region := config.Properties.Compute.Region
+		if region == "" {
+			region = gray("-")
+		}
+		zone := config.Properties.Compute.Zone
+		if zone == "" {
+			zone = gray("-")
+		}
+
+		fmt.Printf("%s  %-20s  %-30s  %-25s  %-15s  %s\n",
+			marker,
+			nameColor(TruncateString(config.Name, 20)),
+			TruncateString(account, 30),
+			TruncateString(project, 25),
+			TruncateString(region, 15),
+			zone)
+	}
+}
+
+func printConfigurationsName(configs []gcloud.Configuration) {
+	for _, config := range configs {
+		fmt.Println(config.Name)
+	}
+}
+
+// ValidateOutputFormat validates the output format string
+func ValidateOutputFormat(format string) (Format, error) {
+	switch strings.ToLower(format) {
+	case "", "default":
+		return FormatDefault, nil
+	case "json":
+		return FormatJSON, nil
+	case "yaml", "yml":
+		return FormatYAML, nil
+	case "wide":
+		return FormatWide, nil
+	case "name":
+		return FormatName, nil
+	default:
+		return "", fmt.Errorf("unsupported output format: %s (supported: json, yaml, wide, name)", format)
+	}
 }
