@@ -61,13 +61,7 @@ func completeConfigNamesForDelete(cmd *cobra.Command, args []string, toComplete 
 func runDelete(cmd *cobra.Command, args []string) error {
 	configName := args[0]
 
-	// Check if gcloud is installed
-	if err := gcloud.CheckGcloudInstalled(); err != nil {
-		output.PrintError(err.Error(), !noColorFlag)
-		return err
-	}
-
-	// Confirm deletion if not forced
+	// Confirm deletion if not forced (gcloud install check is done inside RunGcloudCommand)
 	if !forceFlag {
 		fmt.Printf("Are you sure you want to delete configuration %q? (y/N): ", configName)
 		reader := bufio.NewReader(os.Stdin)

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
 	"github.com/Okabe-Junya/gcloudctx/pkg/interactive"
@@ -27,7 +26,7 @@ func runPreview(cmd *cobra.Command, args []string) error {
 
 	// Parse the configuration name from the fzf selection line
 	// Format: "* config-name (account) [project]" or "  config-name (account) [project]"
-	configName, err := parseConfigName(input)
+	configName, err := interactive.ParseConfigurationName(input)
 	if err != nil {
 		fmt.Printf("Configuration: %s\n\n(Could not parse configuration name)\n", input)
 		return nil
@@ -70,30 +69,4 @@ func runPreview(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
 	return nil
-}
-
-// parseConfigName extracts the configuration name from a formatted line
-func parseConfigName(line string) (string, error) {
-	line = strings.TrimSpace(line)
-	if line == "" {
-		return "", fmt.Errorf("empty line")
-	}
-
-	// Split the line into fields
-	parts := strings.Fields(line)
-	if len(parts) == 0 {
-		return "", fmt.Errorf("invalid format")
-	}
-
-	// Find the configuration name (skip marker and parenthesized/bracketed fields)
-	for _, part := range parts {
-		// Skip marker and fields that start with ( or [
-		if part == "*" || strings.HasPrefix(part, "(") || strings.HasPrefix(part, "[") {
-			continue
-		}
-		// This should be the configuration name
-		return part, nil
-	}
-
-	return "", fmt.Errorf("could not extract configuration name")
 }
