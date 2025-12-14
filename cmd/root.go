@@ -24,13 +24,13 @@ var (
 	Date = "unknown"
 
 	// Flags
-	listFlag        bool
-	currentFlag     bool
-	interactiveFlag bool
-	syncADCFlag     bool
-	impersonateFlag string
-	showInfoFlag    bool
-	noColorFlag     bool
+	listFlag         bool
+	currentFlag      bool
+	interactiveFlag  bool
+	syncADCFlag      bool
+	impersonateFlag  string
+	showInfoFlag     bool
+	noColorFlag      bool
 	outputFormatFlag string
 )
 

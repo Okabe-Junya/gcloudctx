@@ -12,15 +12,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// OutputFormat represents the output format type
-type OutputFormat string
+// Format represents the output format type
+type Format string
 
+// Output format constants
 const (
-	FormatDefault OutputFormat = ""
-	FormatJSON    OutputFormat = "json"
-	FormatYAML    OutputFormat = "yaml"
-	FormatWide    OutputFormat = "wide"
-	FormatName    OutputFormat = "name"
+	FormatDefault Format = ""
+	FormatJSON    Format = "json"
+	FormatYAML    Format = "yaml"
+	FormatWide    Format = "wide"
+	FormatName    Format = "name"
 )
 
 // PrintConfigurations prints all configurations in a formatted way
@@ -215,7 +216,7 @@ type ConfigOutput struct {
 }
 
 // PrintConfigurationsWithFormat prints configurations in the specified format
-func PrintConfigurationsWithFormat(configs []gcloud.Configuration, format OutputFormat, useColor bool) error {
+func PrintConfigurationsWithFormat(configs []gcloud.Configuration, format Format, useColor bool) error {
 	switch format {
 	case FormatJSON:
 		return printConfigurationsJSON(configs)
@@ -334,7 +335,7 @@ func printConfigurationsName(configs []gcloud.Configuration) {
 }
 
 // ValidateOutputFormat validates the output format string
-func ValidateOutputFormat(format string) (OutputFormat, error) {
+func ValidateOutputFormat(format string) (Format, error) {
 	switch strings.ToLower(format) {
 	case "", "default":
 		return FormatDefault, nil
