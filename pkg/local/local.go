@@ -16,7 +16,7 @@ const ConfigFileName = ".gcloudctx"
 // FindLocalConfig searches for a .gcloudctx file starting from the current directory
 // and walking up to the root. Returns the configuration name and the directory where
 // it was found, or an error if not found.
-func FindLocalConfig() (configName string, dir string, err error) {
+func FindLocalConfig() (configName, dir string, err error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get current directory: %w", err)
@@ -26,7 +26,7 @@ func FindLocalConfig() (configName string, dir string, err error) {
 }
 
 // findLocalConfigInPath searches for .gcloudctx file starting from the given path
-func findLocalConfigInPath(startPath string) (configName string, dir string, err error) {
+func findLocalConfigInPath(startPath string) (configName, dir string, err error) {
 	dir = startPath
 
 	for {
@@ -61,7 +61,7 @@ func findLocalConfigInPath(startPath string) (configName string, dir string, err
 // WriteLocalConfig writes a configuration name to a .gcloudctx file in the specified directory
 func WriteLocalConfig(dir, configName string) error {
 	configPath := filepath.Join(dir, ConfigFileName)
-	if err := os.WriteFile(configPath, []byte(configName+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(configPath, []byte(configName+"\n"), 0o600); err != nil {
 		return fmt.Errorf("failed to write %s: %w", configPath, err)
 	}
 	return nil
@@ -103,8 +103,8 @@ func GetLocalConfigPath() (string, error) {
 	return filepath.Join(cwd, ConfigFileName), nil
 }
 
-// LocalConfigExists checks if a .gcloudctx file exists in the current directory
-func LocalConfigExists() bool {
+// ConfigExists checks if a .gcloudctx file exists in the current directory
+func ConfigExists() bool {
 	path, err := GetLocalConfigPath()
 	if err != nil {
 		return false
@@ -112,4 +112,3 @@ func LocalConfigExists() bool {
 	_, err = os.Stat(path)
 	return err == nil
 }
-

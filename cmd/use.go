@@ -72,7 +72,10 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	path, _ := local.GetLocalConfigPath()
+	path, err := local.GetLocalConfigPath()
+	if err != nil {
+		path = local.ConfigFileName
+	}
 	output.PrintSuccess(fmt.Sprintf("set local configuration to %q (saved to %s)", configName, path), !noColorFlag)
 
 	// Switch if requested
@@ -96,7 +99,7 @@ func showLocalConfig() error {
 }
 
 func unsetLocalConfig() error {
-	if !local.LocalConfigExists() {
+	if !local.ConfigExists() {
 		output.PrintError("no .gcloudctx file in current directory", !noColorFlag)
 		return fmt.Errorf("no local config")
 	}
@@ -109,4 +112,3 @@ func unsetLocalConfig() error {
 	output.PrintSuccess("removed .gcloudctx file from current directory", !noColorFlag)
 	return nil
 }
-

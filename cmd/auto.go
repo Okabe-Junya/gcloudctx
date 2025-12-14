@@ -78,4 +78,3 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	output.PrintSuccess(fmt.Sprintf("switched to configuration %q (from %s)", configName, dir), !noColorFlag)
 	return nil
 }
-

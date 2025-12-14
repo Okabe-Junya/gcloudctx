@@ -141,4 +141,3 @@ func TestFindLocalConfigEmptyFile(t *testing.T) {
 		t.Error("expected error for empty config file")
 	}
 }
-
