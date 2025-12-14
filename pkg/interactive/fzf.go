@@ -34,11 +34,11 @@ func getSelfCommand() (string, error) {
 // This implementation passes data via stdin and uses Go for preview (no shell commands)
 func SelectConfigurationInteractive(configs []gcloud.Configuration, currentConfig string) (string, error) {
 	if !IsFzfInstalled() {
-		return "", fmt.Errorf("fzf is not installed")
+		return "", ErrFzfNotInstalled
 	}
 
 	if len(configs) == 0 {
-		return "", fmt.Errorf("no configurations available")
+		return "", ErrNoConfigurations
 	}
 
 	// Build the input data for fzf (format: "* name (account) [project]")
@@ -82,7 +82,7 @@ func SelectConfigurationInteractive(configs []gcloud.Configuration, currentConfi
 		// User canceled (ESC or Ctrl+C)
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if exitErr.ExitCode() == 130 {
-				return "", fmt.Errorf("selection canceled")
+				return "", ErrSelectionCanceled
 			}
 		}
 		return "", fmt.Errorf("fzf selection failed: %w", err)
@@ -91,7 +91,7 @@ func SelectConfigurationInteractive(configs []gcloud.Configuration, currentConfi
 	// Parse the selected line to extract the configuration name
 	selected := strings.TrimSpace(output.String())
 	if selected == "" {
-		return "", fmt.Errorf("no configuration selected")
+		return "", ErrNoSelection
 	}
 
 	// Extract the configuration name from the formatted line

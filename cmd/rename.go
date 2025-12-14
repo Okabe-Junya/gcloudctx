@@ -51,13 +51,13 @@ func runRename(cmd *cobra.Command, args []string) error {
 	oldName := args[0]
 	newName := args[1]
 
-	// Check if gcloud is installed
-	if err := gcloud.CheckGcloudInstalled(); err != nil {
+	// Validate new configuration name before making gcloud calls
+	if err := gcloud.ValidateConfigurationName(newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Rename the configuration
+	// Rename the configuration (gcloud install check is done inside RunGcloudCommand)
 	if err := gcloud.RenameConfiguration(oldName, newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err

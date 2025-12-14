@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -140,7 +141,7 @@ func showCurrentConfiguration() error {
 func interactiveSelection() error {
 	if !interactive.IsFzfInstalled() {
 		output.PrintError("fzf is not installed. Please install fzf for interactive mode.", !noColorFlag)
-		return fmt.Errorf("fzf not installed")
+		return interactive.ErrFzfNotInstalled
 	}
 
 	configs, err := gcloud.ListConfigurations()
@@ -157,7 +158,7 @@ func interactiveSelection() error {
 
 	selected, err := interactive.SelectConfigurationInteractive(configs, currentConfig.Name)
 	if err != nil {
-		if err.Error() == "selection canceled" {
+		if errors.Is(err, interactive.ErrSelectionCanceled) {
 			return nil
 		}
 		output.PrintError(err.Error(), !noColorFlag)
