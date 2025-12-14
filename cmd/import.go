@@ -57,7 +57,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	// Parse configuration
 	var importConfig ExportConfig
 	ext := strings.ToLower(filepath.Ext(filePath))
-	
+
 	switch ext {
 	case ".yaml", ".yml":
 		err = yaml.Unmarshal(data, &importConfig)
@@ -114,8 +114,11 @@ func runImport(cmd *cobra.Command, args []string) error {
 
 	// Set properties
 	if err := setImportedProperties(configName, &importConfig); err != nil {
-		// Clean up on failure
-		_ = gcloud.DeleteConfiguration(configName)
+		// Clean up on failure - ignore error as we're already in error state
+		if cleanupErr := gcloud.DeleteConfiguration(configName); cleanupErr != nil {
+			// Log cleanup error but continue with original error
+			fmt.Fprintf(os.Stderr, "Warning: failed to cleanup configuration: %v\n", cleanupErr)
+		}
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
@@ -161,4 +164,3 @@ func setImportedProperties(configName string, config *ExportConfig) error {
 
 	return nil
 }
-

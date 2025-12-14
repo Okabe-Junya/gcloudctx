@@ -102,7 +102,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 
 	// Write output
 	if exportOutputFlag != "" {
-		if err := os.WriteFile(exportOutputFlag, data, 0o644); err != nil {
+		if err := os.WriteFile(exportOutputFlag, data, 0o600); err != nil {
 			output.PrintError(fmt.Sprintf("failed to write file: %v", err), !noColorFlag)
 			return err
 		}
