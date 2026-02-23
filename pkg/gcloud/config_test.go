@@ -1,6 +1,8 @@
 package gcloud
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -47,19 +49,19 @@ func TestGetActiveConfigurationFromList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getActiveConfigurationFromList(tt.configs)
+			got, err := GetActiveConfigurationFromList(tt.configs)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getActiveConfigurationFromList() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetActiveConfigurationFromList() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if err != nil && tt.errContains != "" {
-				if !containsString(err.Error(), tt.errContains) {
+				if !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("error message = %q, want to contain %q", err.Error(), tt.errContains)
 				}
 				return
 			}
 			if got != nil && got.Name != tt.wantName {
-				t.Errorf("getActiveConfigurationFromList() = %v, want %v", got.Name, tt.wantName)
+				t.Errorf("GetActiveConfigurationFromList() = %v, want %v", got.Name, tt.wantName)
 			}
 		})
 	}
@@ -108,13 +110,13 @@ func TestFindConfigurationByName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, found := findConfigurationByName(configs, tt.configName)
+			got, found := FindConfigurationByName(configs, tt.configName)
 			if found != tt.wantFound {
-				t.Errorf("findConfigurationByName() found = %v, want %v", found, tt.wantFound)
+				t.Errorf("FindConfigurationByName() found = %v, want %v", found, tt.wantFound)
 				return
 			}
 			if found && tt.wantProject != "" && got.Properties.Core.Project != tt.wantProject {
-				t.Errorf("findConfigurationByName() project = %v, want %v", got.Properties.Core.Project, tt.wantProject)
+				t.Errorf("FindConfigurationByName() project = %v, want %v", got.Properties.Core.Project, tt.wantProject)
 			}
 		})
 	}
@@ -141,8 +143,8 @@ func TestConfigurationExistsInList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := configurationExistsInList(configs, tt.configName); got != tt.want {
-				t.Errorf("configurationExistsInList() = %v, want %v", got, tt.want)
+			if got := ConfigurationExistsInList(configs, tt.configName); got != tt.want {
+				t.Errorf("ConfigurationExistsInList() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -177,17 +179,166 @@ func TestValidateConfigurationName(t *testing.T) {
 	}
 }
 
-// containsString checks if s contains substr
-func containsString(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
+func TestValidateConfigurationNameBoundary(t *testing.T) {
+	// Exactly 63 characters should be valid
+	name63 := "a" + strings.Repeat("b", 62)
+	if err := ValidateConfigurationName(name63); err != nil {
+		t.Errorf("Expected 63-char name to be valid, got error: %v", err)
+	}
+
+	// 64 characters should be invalid
+	name64 := "a" + strings.Repeat("b", 63)
+	if err := ValidateConfigurationName(name64); err == nil {
+		t.Error("Expected 64-char name to be invalid")
+	}
+
+	// Single letter should be valid
+	if err := ValidateConfigurationName("a"); err != nil {
+		t.Errorf("Expected single letter to be valid, got error: %v", err)
+	}
+
+	// Underscore start should be invalid
+	if err := ValidateConfigurationName("_config"); err == nil {
+		t.Error("Expected name starting with underscore to be invalid")
+	}
 }
 
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
+func TestGetActiveConfigurationFromListReturnsPointerToOriginal(t *testing.T) {
+	configs := []Configuration{
+		{Name: "default", IsActive: true},
 	}
-	return false
+
+	got, err := GetActiveConfigurationFromList(configs)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify the returned pointer points to the original slice element
+	if got.Name != "default" {
+		t.Errorf("expected 'default', got %q", got.Name)
+	}
+}
+
+func TestFindConfigurationByNameReturnsProperties(t *testing.T) {
+	configs := []Configuration{
+		{
+			Name:     "full-config",
+			IsActive: false,
+			Properties: Properties{
+				Core: CoreProperties{
+					Account: "test@example.com",
+					Project: "test-project",
+				},
+				Compute: ComputeProperties{
+					Region: "asia-northeast1",
+					Zone:   "asia-northeast1-a",
+				},
+			},
+		},
+	}
+
+	got, found := FindConfigurationByName(configs, "full-config")
+	if !found {
+		t.Fatal("expected to find 'full-config'")
+	}
+	if got.Properties.Core.Account != "test@example.com" {
+		t.Errorf("account = %q, want %q", got.Properties.Core.Account, "test@example.com")
+	}
+	if got.Properties.Compute.Region != "asia-northeast1" {
+		t.Errorf("region = %q, want %q", got.Properties.Compute.Region, "asia-northeast1")
+	}
+	if got.Properties.Compute.Zone != "asia-northeast1-a" {
+		t.Errorf("zone = %q, want %q", got.Properties.Compute.Zone, "asia-northeast1-a")
+	}
+}
+
+func TestConfigurationExistsInListEmpty(t *testing.T) {
+	if ConfigurationExistsInList(nil, "any") {
+		t.Error("expected false for nil list")
+	}
+	if ConfigurationExistsInList([]Configuration{}, "any") {
+		t.Error("expected false for empty list")
+	}
+}
+
+func TestConfigurationJSONUnmarshal(t *testing.T) {
+	// Test that Configuration struct can correctly unmarshal gcloud's JSON output
+	jsonData := `[
+		{
+			"name": "default",
+			"is_active": true,
+			"properties": {
+				"core": {
+					"account": "user@example.com",
+					"project": "my-project"
+				},
+				"compute": {
+					"region": "us-central1",
+					"zone": "us-central1-a"
+				}
+			}
+		},
+		{
+			"name": "staging",
+			"is_active": false,
+			"properties": {
+				"core": {
+					"project": "staging-project"
+				}
+			}
+		}
+	]`
+
+	var configs []Configuration
+	if err := json.Unmarshal([]byte(jsonData), &configs); err != nil {
+		t.Fatalf("failed to unmarshal JSON: %v", err)
+	}
+
+	if len(configs) != 2 {
+		t.Fatalf("expected 2 configurations, got %d", len(configs))
+	}
+
+	// Verify first config
+	if configs[0].Name != "default" {
+		t.Errorf("first config name = %q, want %q", configs[0].Name, "default")
+	}
+	if !configs[0].IsActive {
+		t.Error("expected first config to be active")
+	}
+	if configs[0].Properties.Core.Account != "user@example.com" {
+		t.Errorf("first config account = %q, want %q", configs[0].Properties.Core.Account, "user@example.com")
+	}
+	if configs[0].Properties.Compute.Region != "us-central1" {
+		t.Errorf("first config region = %q, want %q", configs[0].Properties.Compute.Region, "us-central1")
+	}
+
+	// Verify second config (partial properties)
+	if configs[1].Name != "staging" {
+		t.Errorf("second config name = %q, want %q", configs[1].Name, "staging")
+	}
+	if configs[1].IsActive {
+		t.Error("expected second config to be inactive")
+	}
+	if configs[1].Properties.Core.Account != "" {
+		t.Errorf("second config account should be empty, got %q", configs[1].Properties.Core.Account)
+	}
+	if configs[1].Properties.Core.Project != "staging-project" {
+		t.Errorf("second config project = %q, want %q", configs[1].Properties.Core.Project, "staging-project")
+	}
+}
+
+func TestMultipleActiveConfigurations(t *testing.T) {
+	// gcloud should only have one active config, but test that our code returns the first one
+	configs := []Configuration{
+		{Name: "first", IsActive: true},
+		{Name: "second", IsActive: true},
+	}
+
+	got, err := GetActiveConfigurationFromList(configs)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Name != "first" {
+		t.Errorf("expected first active config 'first', got %q", got.Name)
+	}
 }

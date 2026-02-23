@@ -158,7 +158,7 @@ func interactiveSelection() error {
 		return err
 	}
 
-	currentConfig, err := gcloud.GetActiveConfiguration()
+	currentConfig, err := gcloud.GetActiveConfigurationFromList(configs)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
@@ -187,15 +187,22 @@ func switchToPrevious() error {
 }
 
 func switchConfiguration(targetName string) error {
-	// Get current configuration before switching
-	currentConfig, err := gcloud.GetActiveConfiguration()
+	// Get all configurations in a single call to avoid multiple gcloud invocations
+	configs, err := gcloud.ListConfigurations()
+	if err != nil {
+		output.PrintError(err.Error(), !noColorFlag)
+		return err
+	}
+
+	// Find current active configuration
+	currentConfig, err := gcloud.GetActiveConfigurationFromList(configs)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
 	// Check if target configuration exists
-	if !gcloud.ConfigurationExists(targetName) {
+	if !gcloud.ConfigurationExistsInList(configs, targetName) {
 		output.PrintError(fmt.Sprintf("configuration %q not found", targetName), !noColorFlag)
 		return fmt.Errorf("configuration not found")
 	}

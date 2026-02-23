@@ -277,9 +277,9 @@ func cleanupConfiguration(name string) error {
 	return nil
 }
 
-// getActiveConfigurationFromList finds the active configuration from a list
+// GetActiveConfigurationFromList finds the active configuration from a list
 // This is a pure function for easier testing
-func getActiveConfigurationFromList(configs []Configuration) (*Configuration, error) {
+func GetActiveConfigurationFromList(configs []Configuration) (*Configuration, error) {
 	for i := range configs {
 		if configs[i].IsActive {
 			return &configs[i], nil
@@ -288,9 +288,9 @@ func getActiveConfigurationFromList(configs []Configuration) (*Configuration, er
 	return nil, fmt.Errorf("no active configuration found")
 }
 
-// findConfigurationByName finds a configuration by name from a list
+// FindConfigurationByName finds a configuration by name from a list
 // Returns the configuration and a boolean indicating if it was found
-func findConfigurationByName(configs []Configuration, name string) (*Configuration, bool) {
+func FindConfigurationByName(configs []Configuration, name string) (*Configuration, bool) {
 	for i := range configs {
 		if configs[i].Name == name {
 			return &configs[i], true
@@ -299,9 +299,9 @@ func findConfigurationByName(configs []Configuration, name string) (*Configurati
 	return nil, false
 }
 
-// configurationExistsInList checks if a configuration exists in a list
-func configurationExistsInList(configs []Configuration, name string) bool {
-	_, found := findConfigurationByName(configs, name)
+// ConfigurationExistsInList checks if a configuration exists in a list
+func ConfigurationExistsInList(configs []Configuration, name string) bool {
+	_, found := FindConfigurationByName(configs, name)
 	return found
 }
 
