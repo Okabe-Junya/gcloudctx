@@ -56,7 +56,7 @@
       ],
       "labels": [
         "dependencies",
-        "major"
+        "renovate/major"
       ],
       "minimumReleaseAge": "7 days",
       "automerge": false
@@ -68,7 +68,7 @@
       ],
       "labels": [
         "dependencies",
-        "minor"
+        "renovate/minor"
       ],
       "minimumReleaseAge": "3 days",
       "automerge": true,
@@ -81,7 +81,7 @@
       ],
       "labels": [
         "dependencies",
-        "patch"
+        "renovate/patch"
       ],
       "minimumReleaseAge": "1 day",
       "automerge": true,
@@ -94,7 +94,7 @@
       ],
       "labels": [
         "dependencies",
-        "pin"
+        "renovate/pin"
       ],
       "automerge": true
     }
@@ -116,7 +116,7 @@
     "enabled": true,
     "labels": [
       "dependencies",
-      "security"
+      "renovate/security"
     ]
   }
 }
