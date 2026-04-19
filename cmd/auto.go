@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Okabe-Junya/gcloudctx/internal/output"
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
@@ -41,7 +42,9 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	// Find local config
 	configName, dir, err := local.FindLocalConfig()
 	if err != nil {
-		// Silent fail - this is expected when no .gcloudctx file exists
+		// Print to stderr so shell cd hooks (which redirect 2>/dev/null) stay silent,
+		// while manual invocations show feedback.
+		fmt.Fprintln(os.Stderr, "no .gcloudctx file found in current or parent directories")
 		return nil
 	}
 
