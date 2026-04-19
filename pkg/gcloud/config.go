@@ -3,8 +3,6 @@ package gcloud
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 )
@@ -72,13 +70,7 @@ func SyncADC(impersonateServiceAccount string) error {
 		args = append(args, "--impersonate-service-account", impersonateServiceAccount)
 	}
 
-	// Run the command interactively (user needs to authenticate in browser)
-	cmd := exec.Command("gcloud", args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
+	if err := RunGcloudCommandInteractive(args...); err != nil {
 		return fmt.Errorf("failed to sync ADC: %w", err)
 	}
 
@@ -236,37 +228,40 @@ func RenameConfiguration(oldName, newName string) error {
 	return nil
 }
 
-// copyConfigProperties copies properties from one configuration to another
-func copyConfigProperties(source *Configuration, targetName string) error {
-	// Copy account property
-	if source.Properties.Core.Account != "" {
-		if err := RunGcloudCommandQuiet("config", "set", "account", source.Properties.Core.Account, "--configuration", targetName); err != nil {
-			return fmt.Errorf("failed to copy account property: %w", err)
-		}
+// SetConfigProperties sets the account, project, region, and zone properties on a target configuration.
+// Empty values are skipped.
+func SetConfigProperties(targetName, account, project, region, zone string) error {
+	props := []struct {
+		key   string
+		value string
+	}{
+		{"account", account},
+		{"project", project},
+		{"compute/region", region},
+		{"compute/zone", zone},
 	}
 
-	// Copy project property
-	if source.Properties.Core.Project != "" {
-		if err := RunGcloudCommandQuiet("config", "set", "project", source.Properties.Core.Project, "--configuration", targetName); err != nil {
-			return fmt.Errorf("failed to copy project property: %w", err)
+	for _, p := range props {
+		if p.value == "" {
+			continue
 		}
-	}
-
-	// Copy region property
-	if source.Properties.Compute.Region != "" {
-		if err := RunGcloudCommandQuiet("config", "set", "compute/region", source.Properties.Compute.Region, "--configuration", targetName); err != nil {
-			return fmt.Errorf("failed to copy region property: %w", err)
-		}
-	}
-
-	// Copy zone property
-	if source.Properties.Compute.Zone != "" {
-		if err := RunGcloudCommandQuiet("config", "set", "compute/zone", source.Properties.Compute.Zone, "--configuration", targetName); err != nil {
-			return fmt.Errorf("failed to copy zone property: %w", err)
+		if err := RunGcloudCommandQuiet("config", "set", p.key, p.value, "--configuration", targetName); err != nil {
+			return fmt.Errorf("failed to set %s property: %w", p.key, err)
 		}
 	}
 
 	return nil
+}
+
+// copyConfigProperties copies properties from one configuration to another
+func copyConfigProperties(source *Configuration, targetName string) error {
+	return SetConfigProperties(
+		targetName,
+		source.Properties.Core.Account,
+		source.Properties.Core.Project,
+		source.Properties.Compute.Region,
+		source.Properties.Compute.Zone,
+	)
 }
 
 // cleanupConfiguration attempts to delete a configuration and returns any error encountered

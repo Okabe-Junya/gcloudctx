@@ -113,7 +113,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	}
 
 	// Set properties
-	if err := setImportedProperties(configName, &importConfig); err != nil {
+	if err := gcloud.SetConfigProperties(configName, importConfig.Account, importConfig.Project, importConfig.Region, importConfig.Zone); err != nil {
 		// Clean up on failure - ignore error as we're already in error state
 		if cleanupErr := gcloud.DeleteConfiguration(configName); cleanupErr != nil {
 			// Log cleanup error but continue with original error
@@ -132,34 +132,6 @@ func runImport(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		output.PrintSuccess(fmt.Sprintf("activated configuration %q", configName), !noColorFlag)
-	}
-
-	return nil
-}
-
-func setImportedProperties(configName string, config *ExportConfig) error {
-	if config.Account != "" {
-		if err := gcloud.RunGcloudCommandQuiet("config", "set", "account", config.Account, "--configuration", configName); err != nil {
-			return fmt.Errorf("failed to set account: %w", err)
-		}
-	}
-
-	if config.Project != "" {
-		if err := gcloud.RunGcloudCommandQuiet("config", "set", "project", config.Project, "--configuration", configName); err != nil {
-			return fmt.Errorf("failed to set project: %w", err)
-		}
-	}
-
-	if config.Region != "" {
-		if err := gcloud.RunGcloudCommandQuiet("config", "set", "compute/region", config.Region, "--configuration", configName); err != nil {
-			return fmt.Errorf("failed to set region: %w", err)
-		}
-	}
-
-	if config.Zone != "" {
-		if err := gcloud.RunGcloudCommandQuiet("config", "set", "compute/zone", config.Zone, "--configuration", configName); err != nil {
-			return fmt.Errorf("failed to set zone: %w", err)
-		}
 	}
 
 	return nil

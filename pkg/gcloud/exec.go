@@ -2,6 +2,7 @@ package gcloud
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -28,6 +29,25 @@ func RunGcloudCommand(args ...string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(output)), nil
+}
+
+// RunGcloudCommandInteractive executes a gcloud command with stdin/stdout/stderr attached
+// This is used for commands that require user interaction (e.g., browser-based authentication)
+func RunGcloudCommandInteractive(args ...string) error {
+	if err := CheckGcloudInstalled(); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("gcloud", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run gcloud command: %w", err)
+	}
+
+	return nil
 }
 
 // RunGcloudCommandQuiet executes a gcloud command and suppresses output
