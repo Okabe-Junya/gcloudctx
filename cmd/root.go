@@ -52,6 +52,8 @@ Examples:
 	Args:                  cobra.MaximumNArgs(1),
 	ValidArgsFunction:     completeConfigNames,
 	DisableFlagsInUseLine: false,
+	SilenceErrors:         true,
+	SilenceUsage:          true,
 }
 
 func init() {
