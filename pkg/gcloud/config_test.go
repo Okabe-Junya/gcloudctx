@@ -327,6 +327,62 @@ func TestConfigurationJSONUnmarshal(t *testing.T) {
 	}
 }
 
+func TestConfigurationJSONUnmarshalStringBool(t *testing.T) {
+	// gcloud may return boolean values as strings ("True"/"False") instead of native JSON booleans
+	jsonData := `[
+		{
+			"name": "default",
+			"is_active": true,
+			"properties": {
+				"core": {
+					"account": "user@example.com",
+					"project": "my-project",
+					"disable_usage_reporting": "False"
+				}
+			}
+		},
+		{
+			"name": "staging",
+			"is_active": false,
+			"properties": {
+				"core": {
+					"project": "staging-project",
+					"disable_usage_reporting": "True"
+				}
+			}
+		},
+		{
+			"name": "prod",
+			"is_active": false,
+			"properties": {
+				"core": {
+					"project": "prod-project",
+					"disable_usage_reporting": true
+				}
+			}
+		}
+	]`
+
+	var configs []Configuration
+	if err := json.Unmarshal([]byte(jsonData), &configs); err != nil {
+		t.Fatalf("failed to unmarshal JSON with string booleans: %v", err)
+	}
+
+	if len(configs) != 3 {
+		t.Fatalf("expected 3 configurations, got %d", len(configs))
+	}
+
+	if bool(configs[0].Properties.Core.DisableUsageReport) != false {
+		t.Error("expected disable_usage_reporting to be false for 'False' string")
+	}
+	if bool(configs[1].Properties.Core.DisableUsageReport) != true {
+		t.Error("expected disable_usage_reporting to be true for 'True' string")
+	}
+	if bool(configs[2].Properties.Core.DisableUsageReport) != true {
+		t.Error("expected disable_usage_reporting to be true for native true boolean")
+	}
+}
+
 func TestMultipleActiveConfigurations(t *testing.T) {
 	// gcloud should only have one active config, but test that our code returns the first one
 	configs := []Configuration{
