@@ -15,6 +15,18 @@ Fast way to switch between gcloud configurations, inspired by [kubectx](https://
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```bash
+brew install Okabe-Junya/tap/gcloudctx
+```
+
+### Pre-built binary
+
+Download the archive for your platform from the
+[latest release](https://github.com/Okabe-Junya/gcloudctx/releases/latest)
+and place the `gcloudctx` binary on your `PATH`.
+
 ### Go Install
 
 ```bash
