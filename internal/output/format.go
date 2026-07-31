@@ -9,7 +9,7 @@ import (
 
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
 	"github.com/fatih/color"
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 // Format represents the output format type
