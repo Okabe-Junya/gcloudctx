@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 func TestFormatConfigurationName(t *testing.T) {

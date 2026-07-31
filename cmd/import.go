@@ -9,8 +9,8 @@ import (
 
 	"github.com/Okabe-Junya/gcloudctx/internal/output"
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
