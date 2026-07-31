@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -44,6 +45,30 @@ func init() {
 	rootCmd.AddCommand(importCmd)
 }
 
+// parseImportData decodes an exported configuration from file contents, using
+// ext to pick the decoder and falling back to content sniffing when unknown.
+func parseImportData(data []byte, ext string) (ExportConfig, error) {
+	// Strip a UTF-8 BOM: neither goccy/go-yaml nor encoding/json skips it, so a
+	// leading BOM would otherwise be folded into the first mapping key and that
+	// field would silently decode as empty.
+	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
+
+	var cfg ExportConfig
+	var err error
+	switch ext {
+	case ".yaml", ".yml":
+		err = yaml.Unmarshal(data, &cfg)
+	case ".json":
+		err = json.Unmarshal(data, &cfg)
+	default:
+		// Try to detect format from content
+		if err = yaml.Unmarshal(data, &cfg); err != nil {
+			err = json.Unmarshal(data, &cfg)
+		}
+	}
+	return cfg, err
+}
+
 func runImport(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
 
@@ -55,21 +80,7 @@ func runImport(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse configuration
-	var importConfig ExportConfig
-	ext := strings.ToLower(filepath.Ext(filePath))
-
-	switch ext {
-	case ".yaml", ".yml":
-		err = yaml.Unmarshal(data, &importConfig)
-	case ".json":
-		err = json.Unmarshal(data, &importConfig)
-	default:
-		// Try to detect format from content
-		if err = yaml.Unmarshal(data, &importConfig); err != nil {
-			err = json.Unmarshal(data, &importConfig)
-		}
-	}
-
+	importConfig, err := parseImportData(data, strings.ToLower(filepath.Ext(filePath)))
 	if err != nil {
 		output.PrintError(fmt.Sprintf("failed to parse file: %v", err), !noColorFlag)
 		return err
