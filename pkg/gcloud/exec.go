@@ -60,7 +60,6 @@ func RunGcloudCommandQuiet(args ...string) error {
 	cmd := exec.Command("gcloud", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// Include stderr in error message for better debugging
 		if len(output) > 0 {
 			return fmt.Errorf("failed to run gcloud command: %w\nOutput: %s", err, strings.TrimSpace(string(output)))
 		}

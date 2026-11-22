@@ -39,7 +39,6 @@ func init() {
 }
 
 func runAuto(cmd *cobra.Command, args []string) error {
-	// Find local config
 	configName, dir, err := local.FindLocalConfig()
 	if err != nil {
 		// Print to stderr so shell cd hooks (which redirect 2>/dev/null) stay silent,
@@ -48,31 +47,25 @@ func runAuto(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Check if configuration exists
 	if !gcloud.ConfigurationExists(configName) {
 		output.PrintError(fmt.Sprintf("configuration %q (from %s/.gcloudctx) does not exist", configName, dir), !noColorFlag)
 		return fmt.Errorf("configuration not found")
 	}
 
-	// Get current configuration
 	currentConfig, err := gcloud.GetActiveConfiguration()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Already on the target configuration
 	if currentConfig.Name == configName {
 		return nil
 	}
 
-	// Save current configuration to history
 	if err := history.SavePreviousConfig(currentConfig.Name); err != nil {
-		// Non-fatal error, just warn
 		fmt.Printf("Warning: failed to save history: %v\n", err)
 	}
 
-	// Activate the target configuration
 	if err := gcloud.ActivateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err

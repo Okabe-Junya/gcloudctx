@@ -15,19 +15,15 @@ func ParseConfigurationName(line string) (string, error) {
 		return "", fmt.Errorf("empty line")
 	}
 
-	// Split the line into fields
 	parts := strings.Fields(line)
 	if len(parts) == 0 {
 		return "", fmt.Errorf("invalid format: no fields found")
 	}
 
-	// Find the configuration name (skip marker and parenthesized/bracketed fields)
 	for _, part := range parts {
-		// Skip marker and fields that start with ( or [
 		if part == "*" || strings.HasPrefix(part, "(") || strings.HasPrefix(part, "[") {
 			continue
 		}
-		// This should be the configuration name
 		return part, nil
 	}
 

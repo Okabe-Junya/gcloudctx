@@ -129,7 +129,6 @@ func DeleteConfiguration(name string) error {
 		return fmt.Errorf("configuration %q does not exist", name)
 	}
 
-	// Get active configuration to prevent deletion
 	activeConfig, err := GetActiveConfiguration()
 	if err != nil {
 		return err
@@ -155,20 +154,16 @@ func CloneConfiguration(sourceName, targetName string) error {
 		return fmt.Errorf("target configuration %q already exists", targetName)
 	}
 
-	// Get the source configuration details
 	sourceConfig, err := GetConfigurationInfo(sourceName)
 	if err != nil {
 		return err
 	}
 
-	// Create the new configuration
 	if err := CreateConfiguration(targetName); err != nil {
 		return err
 	}
 
-	// Copy properties to new configuration
 	if err := copyConfigProperties(sourceConfig, targetName); err != nil {
-		// Clean up on failure
 		if cleanupErr := cleanupConfiguration(targetName); cleanupErr != nil {
 			return fmt.Errorf("failed to copy properties: %w (cleanup also failed: %v)", err, cleanupErr)
 		}
@@ -188,31 +183,27 @@ func RenameConfiguration(oldName, newName string) error {
 		return fmt.Errorf("configuration %q already exists", newName)
 	}
 
-	// Get the old configuration details before starting
 	oldConfig, err := GetConfigurationInfo(oldName)
 	if err != nil {
 		return err
 	}
 
-	// gcloud doesn't have a rename command, so we need to create a new one
-	// and copy the properties
+	// gcloud has no rename command, so create the new configuration, copy the
+	// properties over, and delete the old one.
 	if err := CreateConfiguration(newName); err != nil {
 		return err
 	}
 
-	// Copy properties to new configuration
 	if err := copyConfigProperties(oldConfig, newName); err != nil {
-		// Clean up on failure
 		if cleanupErr := cleanupConfiguration(newName); cleanupErr != nil {
 			return fmt.Errorf("failed to copy properties: %w (cleanup also failed: %v)", err, cleanupErr)
 		}
 		return fmt.Errorf("failed to copy properties: %w", err)
 	}
 
-	// If old config was active, switch to new one
+	// The old configuration cannot be deleted while it is active.
 	if oldConfig.IsActive {
 		if err := ActivateConfiguration(newName); err != nil {
-			// Clean up on failure
 			if cleanupErr := cleanupConfiguration(newName); cleanupErr != nil {
 				return fmt.Errorf("failed to activate configuration: %w (cleanup also failed: %v)", err, cleanupErr)
 			}
@@ -220,7 +211,6 @@ func RenameConfiguration(oldName, newName string) error {
 		}
 	}
 
-	// Delete old configuration
 	if err := DeleteConfiguration(oldName); err != nil {
 		return fmt.Errorf("failed to delete old configuration %q: %w", oldName, err)
 	}
@@ -253,7 +243,6 @@ func SetConfigProperties(targetName, account, project, region, zone string) erro
 	return nil
 }
 
-// copyConfigProperties copies properties from one configuration to another
 func copyConfigProperties(source *Configuration, targetName string) error {
 	return SetConfigProperties(
 		targetName,
@@ -264,7 +253,6 @@ func copyConfigProperties(source *Configuration, targetName string) error {
 	)
 }
 
-// cleanupConfiguration attempts to delete a configuration and returns any error encountered
 func cleanupConfiguration(name string) error {
 	if err := DeleteConfiguration(name); err != nil {
 		return fmt.Errorf("failed to cleanup configuration %q: %w", name, err)
@@ -273,7 +261,6 @@ func cleanupConfiguration(name string) error {
 }
 
 // GetActiveConfigurationFromList finds the active configuration from a list
-// This is a pure function for easier testing
 func GetActiveConfigurationFromList(configs []Configuration) (*Configuration, error) {
 	for i := range configs {
 		if configs[i].IsActive {
@@ -300,8 +287,6 @@ func ConfigurationExistsInList(configs []Configuration, name string) bool {
 	return found
 }
 
-// configNameRegex validates configuration names
-// Must start with a letter, contain only alphanumeric, hyphens, and underscores
 var configNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
 
 // MaxConfigNameLength is the maximum allowed length for a configuration name

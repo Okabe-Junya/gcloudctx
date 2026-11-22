@@ -36,7 +36,6 @@ func init() {
 	rootCmd.AddCommand(deleteCmd)
 }
 
-// completeConfigNamesForDelete provides completion for configuration names (excluding active)
 func completeConfigNamesForDelete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
@@ -49,7 +48,7 @@ func completeConfigNamesForDelete(cmd *cobra.Command, args []string, toComplete 
 
 	var names []string
 	for _, config := range configs {
-		// Don't suggest the active configuration
+		// The active configuration cannot be deleted, so do not suggest it.
 		if !config.IsActive {
 			names = append(names, config.Name)
 		}
@@ -61,7 +60,6 @@ func completeConfigNamesForDelete(cmd *cobra.Command, args []string, toComplete 
 func runDelete(cmd *cobra.Command, args []string) error {
 	configName := args[0]
 
-	// Confirm deletion if not forced (gcloud install check is done inside RunGcloudCommand)
 	if !forceFlag {
 		fmt.Printf("Are you sure you want to delete configuration %q? (y/N): ", configName)
 		reader := bufio.NewReader(os.Stdin)
@@ -76,7 +74,6 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Delete the configuration
 	if err := gcloud.DeleteConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
