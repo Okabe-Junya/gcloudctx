@@ -20,9 +20,8 @@ func init() {
 	rootCmd.AddCommand(previewCmd)
 }
 
-// runPreview reports failures as preview text instead of returning them:
-// errors are silenced on the root command, so an error would leave fzf's
-// preview pane blank.
+// runPreview reports failures as preview text and returns nil, because its
+// only consumer is fzf's preview window, which displays the command's output.
 func runPreview(cmd *cobra.Command, args []string) error {
 	input := args[0]
 

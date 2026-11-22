@@ -60,6 +60,8 @@ func completeConfigNamesForDelete(cmd *cobra.Command, args []string, toComplete 
 func runDelete(cmd *cobra.Command, args []string) error {
 	configName := args[0]
 
+	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first,
+	// so the prompt can appear before a missing gcloud is reported.
 	if !forceFlag {
 		fmt.Printf("Are you sure you want to delete configuration %q? (y/N): ", configName)
 		reader := bufio.NewReader(os.Stdin)

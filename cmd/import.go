@@ -103,6 +103,8 @@ func runImport(cmd *cobra.Command, args []string) error {
 			output.PrintError(fmt.Sprintf("configuration %q already exists (use --overwrite to replace)", configName), !noColorFlag)
 			return fmt.Errorf("configuration already exists")
 		}
+		// DeleteConfiguration refuses the active configuration, so --overwrite
+		// fails when the target is the active one.
 		if err := gcloud.DeleteConfiguration(configName); err != nil {
 			output.PrintError(fmt.Sprintf("failed to delete existing configuration: %v", err), !noColorFlag)
 			return err
