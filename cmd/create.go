@@ -40,6 +40,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first.
 	if err := gcloud.CreateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 

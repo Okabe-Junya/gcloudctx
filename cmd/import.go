@@ -125,6 +125,8 @@ func writeImportedConfiguration(configName string, importConfig ExportConfig) er
 			return errors.New("configuration already exists")
 		}
 
+		// DeleteConfiguration refuses the active configuration, so --overwrite
+		// fails when the target is the active one.
 		if err := gcloud.DeleteConfiguration(configName); err != nil {
 			output.PrintError(fmt.Sprintf("failed to delete existing configuration: %v", err), !noColorFlag)
 

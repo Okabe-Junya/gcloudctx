@@ -83,6 +83,9 @@ func SelectConfigurationInteractive(configs []gcloud.Configuration, currentConfi
 	}
 
 	cmd := exec.Command("fzf", buildFzfArgs(selfCmd)...)
+	// Feed the list on stdin rather than via FZF_DEFAULT_COMMAND, which fzf runs
+	// through a shell, so configuration names and accounts are never
+	// interpolated into a shell command.
 	cmd.Stdin = strings.NewReader(formatFzfInput(configs, currentConfig))
 	cmd.Stderr = os.Stderr
 
