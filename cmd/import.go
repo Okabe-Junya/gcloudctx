@@ -61,7 +61,6 @@ func parseImportData(data []byte, ext string) (ExportConfig, error) {
 	case ".json":
 		err = json.Unmarshal(data, &cfg)
 	default:
-		// Try to detect format from content
 		if err = yaml.Unmarshal(data, &cfg); err != nil {
 			err = json.Unmarshal(data, &cfg)
 		}
@@ -72,21 +71,18 @@ func parseImportData(data []byte, ext string) (ExportConfig, error) {
 func runImport(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
 
-	// Read file
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		output.PrintError(fmt.Sprintf("failed to read file: %v", err), !noColorFlag)
 		return err
 	}
 
-	// Parse configuration
 	importConfig, err := parseImportData(data, strings.ToLower(filepath.Ext(filePath)))
 	if err != nil {
 		output.PrintError(fmt.Sprintf("failed to parse file: %v", err), !noColorFlag)
 		return err
 	}
 
-	// Determine configuration name
 	configName := importConfig.Name
 	if importNameFlag != "" {
 		configName = importNameFlag
@@ -97,37 +93,32 @@ func runImport(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing configuration name")
 	}
 
-	// Validate configuration name
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Check if configuration already exists
 	if gcloud.ConfigurationExists(configName) {
 		if !importOverwriteFlag {
 			output.PrintError(fmt.Sprintf("configuration %q already exists (use --overwrite to replace)", configName), !noColorFlag)
 			return fmt.Errorf("configuration already exists")
 		}
-		// Delete existing configuration for overwrite
+		// DeleteConfiguration refuses the active configuration, so --overwrite
+		// fails when the target is the active one.
 		if err := gcloud.DeleteConfiguration(configName); err != nil {
-			// If it's the active config, we can't delete it
 			output.PrintError(fmt.Sprintf("failed to delete existing configuration: %v", err), !noColorFlag)
 			return err
 		}
 	}
 
-	// Create the configuration
 	if err := gcloud.CreateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Set properties
 	if err := gcloud.SetConfigProperties(configName, importConfig.Account, importConfig.Project, importConfig.Region, importConfig.Zone); err != nil {
-		// Clean up on failure - ignore error as we're already in error state
+		// Report the property error as the cause; a cleanup failure is only a warning.
 		if cleanupErr := gcloud.DeleteConfiguration(configName); cleanupErr != nil {
-			// Log cleanup error but continue with original error
 			fmt.Fprintf(os.Stderr, "Warning: failed to cleanup configuration: %v\n", cleanupErr)
 		}
 		output.PrintError(err.Error(), !noColorFlag)
@@ -136,7 +127,6 @@ func runImport(cmd *cobra.Command, args []string) error {
 
 	output.PrintSuccess(fmt.Sprintf("imported configuration %q from %s", configName, filePath), !noColorFlag)
 
-	// Activate if requested
 	if importActivateFlag {
 		if err := gcloud.ActivateConfiguration(configName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)

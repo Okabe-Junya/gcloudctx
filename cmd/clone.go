@@ -33,9 +33,8 @@ func init() {
 	rootCmd.AddCommand(cloneCmd)
 }
 
-// completeConfigNamesForClone provides completion for clone command
 func completeConfigNamesForClone(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// Only complete the first argument (source name)
+	// The target name is new by definition, so only the source is completed.
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -57,13 +56,11 @@ func runClone(cmd *cobra.Command, args []string) error {
 	sourceName := args[0]
 	targetName := args[1]
 
-	// Validate target configuration name before making gcloud calls
 	if err := gcloud.ValidateConfigurationName(targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Clone the configuration
 	if err := gcloud.CloneConfiguration(sourceName, targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
@@ -71,7 +68,6 @@ func runClone(cmd *cobra.Command, args []string) error {
 
 	output.PrintSuccess(fmt.Sprintf("cloned configuration %q to %q", sourceName, targetName), !noColorFlag)
 
-	// Activate if requested
 	if cloneActivateFlag {
 		if err := gcloud.ActivateConfiguration(targetName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)

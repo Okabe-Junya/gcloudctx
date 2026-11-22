@@ -52,7 +52,6 @@ func TestBuildVersionString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Save and restore package-level vars
 			origVersion, origCommit, origDate := Version, Commit, Date
 			defer func() { Version, Commit, Date = origVersion, origCommit, origDate }()
 
@@ -69,7 +68,6 @@ func TestBuildVersionString(t *testing.T) {
 }
 
 func TestRootCommandStructure(t *testing.T) {
-	// Verify the root command has expected subcommands
 	expectedSubcommands := []string{
 		"create", "delete", "rename", "clone",
 		"use", "auto", "export", "import",
@@ -119,8 +117,6 @@ func TestRootCommandFlags(t *testing.T) {
 }
 
 func TestRootCommandAcceptsMaxOneArg(t *testing.T) {
-	// rootCmd.Args is cobra.MaximumNArgs(1)
-	// Validate by checking that 2 args fails
 	cmd := rootCmd
 	cmd.SetArgs([]string{"arg1", "arg2"})
 

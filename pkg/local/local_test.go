@@ -7,20 +7,17 @@ import (
 )
 
 func TestWriteAndFindLocalConfig(t *testing.T) {
-	// Create a temporary directory
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Write a config file
 	configName := "my-test-config"
 	if err := WriteLocalConfig(tmpDir, configName); err != nil {
 		t.Fatalf("WriteLocalConfig failed: %v", err)
 	}
 
-	// Verify file contents
 	configPath := filepath.Join(tmpDir, ConfigFileName)
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -34,27 +31,23 @@ func TestWriteAndFindLocalConfig(t *testing.T) {
 }
 
 func TestFindLocalConfigInPath(t *testing.T) {
-	// Create a temporary directory structure
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Create nested directories
 	nestedDir := filepath.Join(tmpDir, "project", "src", "deep")
 	if err := os.MkdirAll(nestedDir, 0o755); err != nil {
 		t.Fatalf("failed to create nested dir: %v", err)
 	}
 
-	// Write config in project dir
 	projectDir := filepath.Join(tmpDir, "project")
 	configName := "project-config"
 	if err := WriteLocalConfig(projectDir, configName); err != nil {
 		t.Fatalf("WriteLocalConfig failed: %v", err)
 	}
 
-	// Find config from deep nested dir
 	foundName, foundDir, err := findLocalConfigInPath(nestedDir)
 	if err != nil {
 		t.Fatalf("findLocalConfigInPath failed: %v", err)
@@ -70,7 +63,6 @@ func TestFindLocalConfigInPath(t *testing.T) {
 }
 
 func TestFindLocalConfigNotFound(t *testing.T) {
-	// Create a temporary directory without .gcloudctx
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -84,24 +76,20 @@ func TestFindLocalConfigNotFound(t *testing.T) {
 }
 
 func TestRemoveLocalConfig(t *testing.T) {
-	// Create a temporary directory
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Write a config file
 	if err := WriteLocalConfig(tmpDir, "test-config"); err != nil {
 		t.Fatalf("WriteLocalConfig failed: %v", err)
 	}
 
-	// Remove it
 	if err := RemoveLocalConfig(tmpDir); err != nil {
 		t.Fatalf("RemoveLocalConfig failed: %v", err)
 	}
 
-	// Verify it's gone
 	configPath := filepath.Join(tmpDir, ConfigFileName)
 	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
 		t.Error("config file should not exist after removal")
@@ -109,28 +97,24 @@ func TestRemoveLocalConfig(t *testing.T) {
 }
 
 func TestRemoveLocalConfigNonExistent(t *testing.T) {
-	// Create a temporary directory without .gcloudctx
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Should not error when file doesn't exist
 	if err := RemoveLocalConfig(tmpDir); err != nil {
 		t.Errorf("RemoveLocalConfig should not error for non-existent file: %v", err)
 	}
 }
 
 func TestFindLocalConfigEmptyFile(t *testing.T) {
-	// Create a temporary directory
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Write an empty config file
 	configPath := filepath.Join(tmpDir, ConfigFileName)
 	if err := os.WriteFile(configPath, []byte(""), 0o644); err != nil {
 		t.Fatalf("failed to write empty config: %v", err)
@@ -149,7 +133,6 @@ func TestFindLocalConfigWhitespaceOnly(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Write a config file with only whitespace
 	configPath := filepath.Join(tmpDir, ConfigFileName)
 	if err := os.WriteFile(configPath, []byte("   \n\t  \n"), 0o644); err != nil {
 		t.Fatalf("failed to write whitespace config: %v", err)
@@ -168,17 +151,14 @@ func TestWriteLocalConfigOverwrite(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Write first config
 	if err := WriteLocalConfig(tmpDir, "first-config"); err != nil {
 		t.Fatalf("WriteLocalConfig failed: %v", err)
 	}
 
-	// Overwrite with second config
 	if err := WriteLocalConfig(tmpDir, "second-config"); err != nil {
 		t.Fatalf("WriteLocalConfig overwrite failed: %v", err)
 	}
 
-	// Verify the overwritten content
 	name, _, err := findLocalConfigInPath(tmpDir)
 	if err != nil {
 		t.Fatalf("findLocalConfigInPath failed: %v", err)
@@ -205,7 +185,6 @@ func TestWriteLocalConfigPermissions(t *testing.T) {
 		t.Fatalf("failed to stat config file: %v", err)
 	}
 
-	// Check that the file has restrictive permissions (0600)
 	perm := info.Mode().Perm()
 	if perm != 0o600 {
 		t.Errorf("expected permissions 0600, got %o", perm)
@@ -213,7 +192,6 @@ func TestWriteLocalConfigPermissions(t *testing.T) {
 }
 
 func TestFindLocalConfigTraversesUp(t *testing.T) {
-	// Create a deep directory structure with config at root
 	tmpDir, err := os.MkdirTemp("", "gcloudctx-test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -225,12 +203,10 @@ func TestFindLocalConfigTraversesUp(t *testing.T) {
 		t.Fatalf("failed to create deep dir: %v", err)
 	}
 
-	// Place config at root
 	if err := WriteLocalConfig(tmpDir, "root-config"); err != nil {
 		t.Fatalf("WriteLocalConfig failed: %v", err)
 	}
 
-	// Should find it from deep directory
 	name, dir, err := findLocalConfigInPath(deepDir)
 	if err != nil {
 		t.Fatalf("findLocalConfigInPath failed: %v", err)
@@ -256,7 +232,6 @@ func TestFindLocalConfigClosestWins(t *testing.T) {
 		t.Fatalf("failed to create child dir: %v", err)
 	}
 
-	// Place configs at both levels
 	if err := WriteLocalConfig(tmpDir, "parent-config"); err != nil {
 		t.Fatalf("WriteLocalConfig parent failed: %v", err)
 	}
@@ -264,7 +239,6 @@ func TestFindLocalConfigClosestWins(t *testing.T) {
 		t.Fatalf("WriteLocalConfig child failed: %v", err)
 	}
 
-	// From child dir, should find child config
 	name, dir, err := findLocalConfigInPath(childDir)
 	if err != nil {
 		t.Fatalf("findLocalConfigInPath failed: %v", err)

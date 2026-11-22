@@ -45,7 +45,6 @@ func PrintConfigurations(configs []gcloud.Configuration, useColor bool) {
 		account := config.Properties.Core.Account
 		project := config.Properties.Core.Project
 
-		// Format: * name (account) [project]
 		line := fmt.Sprintf("%s %s", marker, nameColor(config.Name))
 
 		if account != "" {
@@ -149,13 +148,11 @@ func AlignColumns(rows [][]string, padding int) []string {
 		return nil
 	}
 
-	// Find max width for each column
 	colCount := len(rows[0])
 	maxWidths := make([]int, colCount)
 
 	for _, row := range rows {
 		for i, cell := range row {
-			// Remove ANSI color codes for width calculation
 			cleanCell := removeANSICodes(cell)
 			if len(cleanCell) > maxWidths[i] {
 				maxWidths[i] = len(cleanCell)
@@ -163,7 +160,6 @@ func AlignColumns(rows [][]string, padding int) []string {
 		}
 	}
 
-	// Format rows
 	result := make([]string, len(rows))
 	for i, row := range rows {
 		var parts []string
@@ -182,9 +178,9 @@ func AlignColumns(rows [][]string, padding int) []string {
 	return result
 }
 
-// removeANSICodes removes ANSI color codes from a string
+// removeANSICodes strips SGR color sequences (ESC ... 'm') only, which is all
+// fatih/color emits; other escape sequences are not handled.
 func removeANSICodes(s string) string {
-	// Simple ANSI code removal (may not handle all cases)
 	inEscape := false
 	var result strings.Builder
 
@@ -284,7 +280,6 @@ func printConfigurationsWide(configs []gcloud.Configuration, useColor bool) {
 	gray := color.New(color.FgHiBlack).SprintFunc()
 	bold := color.New(color.Bold).SprintFunc()
 
-	// Print header
 	fmt.Printf("%s  %-20s  %-30s  %-25s  %-15s  %s\n",
 		bold(" "),
 		bold("NAME"),

@@ -34,13 +34,12 @@ func init() {
 func runCreate(cmd *cobra.Command, args []string) error {
 	configName := args[0]
 
-	// Validate configuration name before making gcloud calls
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Create the configuration (gcloud install check is done inside RunGcloudCommand)
+	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first.
 	if err := gcloud.CreateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
@@ -48,7 +47,6 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	output.PrintSuccess(fmt.Sprintf("created configuration %q", configName), !noColorFlag)
 
-	// Activate if requested
 	if activateFlag {
 		if err := gcloud.ActivateConfiguration(configName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)

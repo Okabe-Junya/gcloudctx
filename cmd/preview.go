@@ -8,11 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// previewCmd is an internal command used by fzf for preview functionality
 var previewCmd = &cobra.Command{
 	Use:    interactive.PreviewCommand + " <configuration-name>",
 	Short:  "Internal command for fzf preview (do not use directly)",
-	Hidden: true, // Hide from help output
+	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	RunE:   runPreview,
 }
@@ -21,25 +20,23 @@ func init() {
 	rootCmd.AddCommand(previewCmd)
 }
 
+// runPreview reports failures as preview text and returns nil, because its
+// only consumer is fzf's preview window, which displays the command's output.
 func runPreview(cmd *cobra.Command, args []string) error {
 	input := args[0]
 
-	// Parse the configuration name from the fzf selection line
-	// Format: "* config-name (account) [project]" or "  config-name (account) [project]"
 	configName, err := interactive.ParseConfigurationName(input)
 	if err != nil {
 		fmt.Printf("Configuration: %s\n\n(Could not parse configuration name)\n", input)
 		return nil
 	}
 
-	// Get configuration info
 	config, err := gcloud.GetConfigurationInfo(configName)
 	if err != nil {
 		fmt.Printf("Configuration: %s\n\n(Details unavailable)\n", configName)
-		return nil // Don't return error to avoid breaking fzf
+		return nil
 	}
 
-	// Display configuration details
 	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 	fmt.Printf("  Configuration: %s\n", config.Name)
 	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")

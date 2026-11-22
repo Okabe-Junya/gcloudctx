@@ -180,24 +180,20 @@ func TestValidateConfigurationName(t *testing.T) {
 }
 
 func TestValidateConfigurationNameBoundary(t *testing.T) {
-	// Exactly 63 characters should be valid
 	name63 := "a" + strings.Repeat("b", 62)
 	if err := ValidateConfigurationName(name63); err != nil {
 		t.Errorf("Expected 63-char name to be valid, got error: %v", err)
 	}
 
-	// 64 characters should be invalid
 	name64 := "a" + strings.Repeat("b", 63)
 	if err := ValidateConfigurationName(name64); err == nil {
 		t.Error("Expected 64-char name to be invalid")
 	}
 
-	// Single letter should be valid
 	if err := ValidateConfigurationName("a"); err != nil {
 		t.Errorf("Expected single letter to be valid, got error: %v", err)
 	}
 
-	// Underscore start should be invalid
 	if err := ValidateConfigurationName("_config"); err == nil {
 		t.Error("Expected name starting with underscore to be invalid")
 	}
@@ -213,7 +209,6 @@ func TestGetActiveConfigurationFromListReturnsPointerToOriginal(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Verify the returned pointer points to the original slice element
 	if got.Name != "default" {
 		t.Errorf("expected 'default', got %q", got.Name)
 	}
@@ -262,7 +257,6 @@ func TestConfigurationExistsInListEmpty(t *testing.T) {
 }
 
 func TestConfigurationJSONUnmarshal(t *testing.T) {
-	// Test that Configuration struct can correctly unmarshal gcloud's JSON output
 	jsonData := `[
 		{
 			"name": "default",
@@ -298,7 +292,6 @@ func TestConfigurationJSONUnmarshal(t *testing.T) {
 		t.Fatalf("expected 2 configurations, got %d", len(configs))
 	}
 
-	// Verify first config
 	if configs[0].Name != "default" {
 		t.Errorf("first config name = %q, want %q", configs[0].Name, "default")
 	}
@@ -312,7 +305,6 @@ func TestConfigurationJSONUnmarshal(t *testing.T) {
 		t.Errorf("first config region = %q, want %q", configs[0].Properties.Compute.Region, "us-central1")
 	}
 
-	// Verify second config (partial properties)
 	if configs[1].Name != "staging" {
 		t.Errorf("second config name = %q, want %q", configs[1].Name, "staging")
 	}

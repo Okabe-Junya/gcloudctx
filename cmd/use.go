@@ -42,31 +42,26 @@ func init() {
 }
 
 func runUse(cmd *cobra.Command, args []string) error {
-	// Handle unset flag
 	if useUnsetFlag {
 		return unsetLocalConfig()
 	}
 
-	// If no arguments, show current local config
 	if len(args) == 0 {
 		return showLocalConfig()
 	}
 
 	configName := args[0]
 
-	// Validate configuration name
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Check if configuration exists
 	if !gcloud.ConfigurationExists(configName) {
 		output.PrintError(fmt.Sprintf("configuration %q does not exist", configName), !noColorFlag)
 		return fmt.Errorf("configuration not found")
 	}
 
-	// Write local config
 	if err := local.WriteLocalConfigCurrent(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
@@ -78,7 +73,6 @@ func runUse(cmd *cobra.Command, args []string) error {
 	}
 	output.PrintSuccess(fmt.Sprintf("set local configuration to %q (saved to %s)", configName, path), !noColorFlag)
 
-	// Switch if requested
 	if useSwitchFlag {
 		return switchConfiguration(configName)
 	}

@@ -53,7 +53,6 @@ func runExport(cmd *cobra.Command, args []string) error {
 	var configName string
 
 	if len(args) == 0 {
-		// Export current configuration
 		currentConfig, err := gcloud.GetActiveConfiguration()
 		if err != nil {
 			output.PrintError(err.Error(), !noColorFlag)
@@ -64,14 +63,12 @@ func runExport(cmd *cobra.Command, args []string) error {
 		configName = args[0]
 	}
 
-	// Get configuration info
 	config, err := gcloud.GetConfigurationInfo(configName)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Build export structure
 	exportConfig := ExportConfig{
 		Name:    config.Name,
 		Account: config.Properties.Core.Account,
@@ -80,7 +77,6 @@ func runExport(cmd *cobra.Command, args []string) error {
 		Zone:    config.Properties.Compute.Zone,
 	}
 
-	// Marshal to the requested format
 	var data []byte
 	switch exportFormatFlag {
 	case "yaml", "yml":
@@ -100,7 +96,6 @@ func runExport(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Write output
 	if exportOutputFlag != "" {
 		if err := os.WriteFile(exportOutputFlag, data, 0o600); err != nil {
 			output.PrintError(fmt.Sprintf("failed to write file: %v", err), !noColorFlag)

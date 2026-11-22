@@ -6,7 +6,6 @@ import (
 )
 
 func TestIsFzfInstalled(t *testing.T) {
-	// This test will pass if fzf is installed on the system
 	// We just check that it doesn't panic
 	result := IsFzfInstalled()
 	t.Logf("fzf installed: %v", result)
@@ -69,7 +68,6 @@ func TestBuildFzfArgs(t *testing.T) {
 			name:        "default settings",
 			envSettings: map[string]string{},
 			checkArgs: func(args []string) bool {
-				// Should contain default height
 				for i, arg := range args {
 					if arg == "--height" && i+1 < len(args) {
 						return args[i+1] == DefaultFzfHeight
@@ -100,7 +98,6 @@ func TestBuildFzfArgs(t *testing.T) {
 				EnvDisablePreview: "1",
 			},
 			checkArgs: func(args []string) bool {
-				// Should not contain --preview
 				for _, arg := range args {
 					if arg == "--preview" {
 						return false
@@ -116,7 +113,6 @@ func TestBuildFzfArgs(t *testing.T) {
 				EnvDisablePreview: "0",
 			},
 			checkArgs: func(args []string) bool {
-				// Should contain --preview
 				for _, arg := range args {
 					if arg == "--preview" {
 						return true
@@ -130,7 +126,6 @@ func TestBuildFzfArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set environment variables
 			for key, value := range tt.envSettings {
 				os.Setenv(key, value)
 				defer os.Unsetenv(key)

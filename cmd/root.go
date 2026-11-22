@@ -23,7 +23,6 @@ var (
 	// Date is the build date, set during build via ldflags
 	Date = "unknown"
 
-	// Flags
 	listFlag         bool
 	currentFlag      bool
 	interactiveFlag  bool
@@ -68,45 +67,36 @@ func init() {
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
-	// Check if gcloud is installed
 	if err := gcloud.CheckGcloudInstalled(); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Handle list flag
 	if listFlag {
 		return listConfigurations()
 	}
 
-	// Handle current flag
 	if currentFlag {
 		return showCurrentConfiguration()
 	}
 
-	// Handle interactive flag
 	if interactiveFlag {
 		return interactiveSelection()
 	}
 
-	// If no arguments, try interactive mode (if fzf is available), otherwise show current configuration
 	if len(args) == 0 {
-		// Check if we should skip fzf (via environment variable or explicit flag)
 		if os.Getenv(interactive.EnvIgnoreFzf) != "1" && interactive.IsFzfInstalled() {
 			return interactiveSelection()
 		}
 		return showCurrentConfiguration()
 	}
 
-	// Switch to specified configuration
 	targetConfig := args[0]
 
-	// Handle '-' to switch to previous configuration
 	if targetConfig == "-" {
 		return switchToPrevious()
 	}
 
-	// Switch to the target configuration
 	return switchConfiguration(targetConfig)
 }
 
@@ -122,7 +112,6 @@ func listConfigurations() error {
 		return nil
 	}
 
-	// Validate and use output format
 	format, err := output.ValidateOutputFormat(outputFormatFlag)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
@@ -189,39 +178,36 @@ func switchToPrevious() error {
 }
 
 func switchConfiguration(targetName string) error {
-	// Get all configurations in a single call to avoid multiple gcloud invocations
+	// One list call serves both the active-config lookup and the existence
+	// check, because every gcloud invocation is slow.
 	configs, err := gcloud.ListConfigurations()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Find current active configuration
 	currentConfig, err := gcloud.GetActiveConfigurationFromList(configs)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Check if target configuration exists
 	if !gcloud.ConfigurationExistsInList(configs, targetName) {
 		output.PrintError(fmt.Sprintf("configuration %q not found", targetName), !noColorFlag)
 		return fmt.Errorf("configuration not found")
 	}
 
-	// Check if already on target configuration
 	if currentConfig.Name == targetName {
 		output.PrintSuccess(fmt.Sprintf("already on configuration %q", targetName), !noColorFlag)
 		return nil
 	}
 
-	// Save current configuration to history
+	// History is a convenience for "gcloudctx -"; failing to save it must not
+	// block the switch itself.
 	if err := history.SavePreviousConfig(currentConfig.Name); err != nil {
-		// Non-fatal error, just warn
 		fmt.Fprintf(os.Stderr, "Warning: failed to save history: %v\n", err)
 	}
 
-	// Activate the target configuration
 	if err := gcloud.ActivateConfiguration(targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
@@ -229,7 +215,6 @@ func switchConfiguration(targetName string) error {
 
 	output.PrintSuccess(fmt.Sprintf("switched to configuration %q", targetName), !noColorFlag)
 
-	// Sync ADC if requested
 	if syncADCFlag {
 		fmt.Println("Syncing Application Default Credentials...")
 		if err := gcloud.SyncADC(impersonateFlag); err != nil {
@@ -242,13 +227,11 @@ func switchConfiguration(targetName string) error {
 	return nil
 }
 
-// completeConfigNames provides completion for configuration names
 func completeConfigNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	// Try to get configuration names
 	configs, err := gcloud.ListConfigurations()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
@@ -269,7 +252,6 @@ func Execute() {
 	}
 }
 
-// buildVersionString returns a formatted version string including commit and date
 func buildVersionString() string {
 	result := Version
 	if Commit != "none" {

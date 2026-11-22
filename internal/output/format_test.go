@@ -87,7 +87,6 @@ func TestAlignColumns(t *testing.T) {
 		t.Errorf("Expected 2 rows, got %d", len(result))
 	}
 
-	// The first column should be aligned
 	if len(result[0]) < len(result[1]) {
 		t.Error("First row should be at least as long as second row after alignment")
 	}
@@ -107,7 +106,6 @@ func TestPrintConfigurationsDoesNotPanic(t *testing.T) {
 		},
 	}
 
-	// This should not panic
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("PrintConfigurations panicked: %v", r)
@@ -123,7 +121,6 @@ func TestPrintCurrentConfigurationDoesNotPanic(t *testing.T) {
 		IsActive: true,
 	}
 
-	// This should not panic
 	defer func() {
 		if r := recover(); r != nil {
 			t.Errorf("PrintCurrentConfiguration panicked: %v", r)
@@ -165,7 +162,6 @@ func TestValidateOutputFormat(t *testing.T) {
 	}
 }
 
-// captureStdout captures stdout output during the execution of f
 func captureStdout(t *testing.T, f func()) string {
 	t.Helper()
 	old := os.Stdout
@@ -299,7 +295,6 @@ func TestPrintConfigurationsWithFormatWide(t *testing.T) {
 		}
 	})
 
-	// Wide format should contain header and data
 	if !strings.Contains(out, "NAME") {
 		t.Error("Wide format should contain 'NAME' header")
 	}

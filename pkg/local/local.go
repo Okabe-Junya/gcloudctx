@@ -25,14 +25,12 @@ func FindLocalConfig() (configName, dir string, err error) {
 	return findLocalConfigInPath(cwd)
 }
 
-// findLocalConfigInPath searches for .gcloudctx file starting from the given path
 func findLocalConfigInPath(startPath string) (configName, dir string, err error) {
 	dir = startPath
 
 	for {
 		configPath := filepath.Join(dir, ConfigFileName)
 		if _, err := os.Stat(configPath); err == nil {
-			// Found the file, read its contents
 			data, err := os.ReadFile(configPath)
 			if err != nil {
 				return "", "", fmt.Errorf("failed to read %s: %w", configPath, err)
@@ -46,10 +44,8 @@ func findLocalConfigInPath(startPath string) (configName, dir string, err error)
 			return name, dir, nil
 		}
 
-		// Move to parent directory
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			// Reached root
 			break
 		}
 		dir = parent

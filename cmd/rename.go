@@ -27,9 +27,8 @@ func init() {
 	rootCmd.AddCommand(renameCmd)
 }
 
-// completeConfigNamesForRename provides completion for rename command
 func completeConfigNamesForRename(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// Only complete the first argument (old name)
+	// The new name does not exist yet, so only the old name is completed.
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -51,13 +50,12 @@ func runRename(cmd *cobra.Command, args []string) error {
 	oldName := args[0]
 	newName := args[1]
 
-	// Validate new configuration name before making gcloud calls
 	if err := gcloud.ValidateConfigurationName(newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
 	}
 
-	// Rename the configuration (gcloud install check is done inside RunGcloudCommand)
+	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first.
 	if err := gcloud.RenameConfiguration(oldName, newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
 		return err
