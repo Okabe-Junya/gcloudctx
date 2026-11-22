@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	// Version is the version of the application, set during build via ldflags
+	// Version is the version of the application, set during build via ldflags.
 	Version = "dev"
-	// Commit is the git commit hash, set during build via ldflags
+	// Commit is the git commit hash, set during build via ldflags.
 	Commit = "none"
-	// Date is the build date, set during build via ldflags
+	// Date is the build date, set during build via ldflags.
 	Date = "unknown"
 
 	listFlag         bool
@@ -56,19 +56,21 @@ Examples:
 }
 
 func init() {
-	rootCmd.Flags().BoolVarP(&listFlag, "list", "l", false, "List all configurations")
-	rootCmd.Flags().BoolVarP(&currentFlag, "current", "c", false, "Show current configuration")
-	rootCmd.Flags().BoolVarP(&interactiveFlag, "interactive", "i", false, "Interactive mode with fzf")
-	rootCmd.Flags().BoolVar(&syncADCFlag, "sync-adc", false, "Sync Application Default Credentials after switching")
-	rootCmd.Flags().StringVar(&impersonateFlag, "impersonate-service-account", "", "Service account to impersonate for ADC")
-	rootCmd.Flags().BoolVar(&showInfoFlag, "info", false, "Show detailed configuration information")
-	rootCmd.Flags().BoolVar(&noColorFlag, "no-color", false, "Disable colored output")
-	rootCmd.Flags().StringVarP(&outputFormatFlag, "output", "o", "", "Output format (json, yaml, wide, name)")
+	flags := rootCmd.Flags()
+	flags.BoolVarP(&listFlag, "list", "l", false, "List all configurations")
+	flags.BoolVarP(&currentFlag, "current", "c", false, "Show current configuration")
+	flags.BoolVarP(&interactiveFlag, "interactive", "i", false, "Interactive mode with fzf")
+	flags.BoolVar(&syncADCFlag, "sync-adc", false, "Sync Application Default Credentials after switching")
+	flags.StringVar(&impersonateFlag, "impersonate-service-account", "", "Service account to impersonate for ADC")
+	flags.BoolVar(&showInfoFlag, "info", false, "Show detailed configuration information")
+	flags.BoolVar(&noColorFlag, "no-color", false, "Disable colored output")
+	flags.StringVarP(&outputFormatFlag, "output", "o", "", "Output format (json, yaml, wide, name)")
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
 	if err := gcloud.CheckGcloudInstalled(); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -88,6 +90,7 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		if os.Getenv(interactive.EnvIgnoreFzf) != "1" && interactive.IsFzfInstalled() {
 			return interactiveSelection()
 		}
+
 		return showCurrentConfiguration()
 	}
 
@@ -104,17 +107,20 @@ func listConfigurations() error {
 	configs, err := gcloud.ListConfigurations()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	if len(configs) == 0 {
 		fmt.Println("No configurations found")
+
 		return nil
 	}
 
 	format, err := output.ValidateOutputFormat(outputFormatFlag)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -125,6 +131,7 @@ func showCurrentConfiguration() error {
 	config, err := gcloud.GetActiveConfiguration()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -140,18 +147,21 @@ func showCurrentConfiguration() error {
 func interactiveSelection() error {
 	if !interactive.IsFzfInstalled() {
 		output.PrintError("fzf is not installed. Please install fzf for interactive mode.", !noColorFlag)
+
 		return interactive.ErrFzfNotInstalled
 	}
 
 	configs, err := gcloud.ListConfigurations()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	currentConfig, err := gcloud.GetActiveConfigurationFromList(configs)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -160,7 +170,9 @@ func interactiveSelection() error {
 		if errors.Is(err, interactive.ErrSelectionCanceled) {
 			return nil
 		}
+
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -171,6 +183,7 @@ func switchToPrevious() error {
 	previousName, err := history.GetPreviousConfig()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -183,22 +196,26 @@ func switchConfiguration(targetName string) error {
 	configs, err := gcloud.ListConfigurations()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	currentConfig, err := gcloud.GetActiveConfigurationFromList(configs)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	if !gcloud.ConfigurationExistsInList(configs, targetName) {
 		output.PrintError(fmt.Sprintf("configuration %q not found", targetName), !noColorFlag)
-		return fmt.Errorf("configuration not found")
+
+		return errors.New("configuration not found")
 	}
 
 	if currentConfig.Name == targetName {
 		output.PrintSuccess(fmt.Sprintf("already on configuration %q", targetName), !noColorFlag)
+
 		return nil
 	}
 
@@ -210,6 +227,7 @@ func switchConfiguration(targetName string) error {
 
 	if err := gcloud.ActivateConfiguration(targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -217,17 +235,24 @@ func switchConfiguration(targetName string) error {
 
 	if syncADCFlag {
 		fmt.Println("Syncing Application Default Credentials...")
+
 		if err := gcloud.SyncADC(impersonateFlag); err != nil {
 			output.PrintError(fmt.Sprintf("failed to sync ADC: %v", err), !noColorFlag)
+
 			return err
 		}
+
 		output.PrintSuccess("ADC synced successfully", !noColorFlag)
 	}
 
 	return nil
 }
 
-func completeConfigNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeConfigNames(
+	cmd *cobra.Command, args []string, toComplete string,
+) ([]string, cobra.ShellCompDirective) {
+	// Only the first argument names an existing configuration; a second one
+	// (clone/rename target) is new by definition.
 	if len(args) > 0 {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -245,20 +270,24 @@ func completeConfigNames(cmd *cobra.Command, args []string, toComplete string) (
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
-// Execute runs the root command
+// Execute runs the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
+const shortCommitLength = 7
+
 func buildVersionString() string {
 	result := Version
 	if Commit != "none" {
-		result += " (commit: " + Commit[:min(7, len(Commit))] + ")"
+		result += " (commit: " + Commit[:min(shortCommitLength, len(Commit))] + ")"
 	}
+
 	if Date != "unknown" {
 		result += " built at " + Date
 	}
+
 	return result
 }

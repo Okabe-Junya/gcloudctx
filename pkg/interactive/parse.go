@@ -1,7 +1,7 @@
 package interactive
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -12,20 +12,21 @@ import (
 func ParseConfigurationName(line string) (string, error) {
 	line = strings.TrimSpace(line)
 	if line == "" {
-		return "", fmt.Errorf("empty line")
+		return "", errors.New("empty line")
 	}
 
 	parts := strings.Fields(line)
 	if len(parts) == 0 {
-		return "", fmt.Errorf("invalid format: no fields found")
+		return "", errors.New("invalid format: no fields found")
 	}
 
 	for _, part := range parts {
 		if part == "*" || strings.HasPrefix(part, "(") || strings.HasPrefix(part, "[") {
 			continue
 		}
+
 		return part, nil
 	}
 
-	return "", fmt.Errorf("could not extract configuration name")
+	return "", errors.New("could not extract configuration name")
 }

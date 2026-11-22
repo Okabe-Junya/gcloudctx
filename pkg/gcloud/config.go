@@ -2,12 +2,13 @@ package gcloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 )
 
-// ListConfigurations returns all available gcloud configurations
+// ListConfigurations returns all available gcloud configurations.
 func ListConfigurations() ([]Configuration, error) {
 	output, err := RunGcloudCommand("config", "configurations", "list", "--format=json")
 	if err != nil {
@@ -22,7 +23,7 @@ func ListConfigurations() ([]Configuration, error) {
 	return configs, nil
 }
 
-// GetActiveConfiguration returns the currently active configuration
+// GetActiveConfiguration returns the currently active configuration.
 func GetActiveConfiguration() (*Configuration, error) {
 	configs, err := ListConfigurations()
 	if err != nil {
@@ -35,18 +36,19 @@ func GetActiveConfiguration() (*Configuration, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no active configuration found")
+	return nil, errors.New("no active configuration found")
 }
 
-// ActivateConfiguration activates a specific configuration
+// ActivateConfiguration activates a specific configuration.
 func ActivateConfiguration(name string) error {
 	if err := RunGcloudCommandQuiet("config", "configurations", "activate", name); err != nil {
 		return fmt.Errorf("failed to activate configuration %q: %w", name, err)
 	}
+
 	return nil
 }
 
-// ConfigurationExists checks if a configuration exists
+// ConfigurationExists checks if a configuration exists.
 func ConfigurationExists(name string) bool {
 	configs, err := ListConfigurations()
 	if err != nil {
@@ -62,7 +64,7 @@ func ConfigurationExists(name string) bool {
 	return false
 }
 
-// SyncADC synchronizes Application Default Credentials with the current configuration
+// SyncADC synchronizes Application Default Credentials with the current configuration.
 func SyncADC(impersonateServiceAccount string) error {
 	args := []string{"auth", "application-default", "login"}
 
@@ -77,7 +79,7 @@ func SyncADC(impersonateServiceAccount string) error {
 	return nil
 }
 
-// GetConfigurationInfo returns detailed information about a configuration
+// GetConfigurationInfo returns detailed information about a configuration.
 func GetConfigurationInfo(name string) (*Configuration, error) {
 	configs, err := ListConfigurations()
 	if err != nil {
@@ -93,25 +95,27 @@ func GetConfigurationInfo(name string) (*Configuration, error) {
 	return nil, fmt.Errorf("configuration %q not found", name)
 }
 
-// GetCurrentProject returns the current project from active configuration
+// GetCurrentProject returns the current project from active configuration.
 func GetCurrentProject() (string, error) {
 	output, err := RunGcloudCommand("config", "get-value", "project")
 	if err != nil {
 		return "", err
 	}
+
 	return strings.TrimSpace(output), nil
 }
 
-// GetCurrentAccount returns the current account from active configuration
+// GetCurrentAccount returns the current account from active configuration.
 func GetCurrentAccount() (string, error) {
 	output, err := RunGcloudCommand("config", "get-value", "account")
 	if err != nil {
 		return "", err
 	}
+
 	return strings.TrimSpace(output), nil
 }
 
-// CreateConfiguration creates a new gcloud configuration
+// CreateConfiguration creates a new gcloud configuration.
 func CreateConfiguration(name string) error {
 	if ConfigurationExists(name) {
 		return fmt.Errorf("configuration %q already exists", name)
@@ -120,10 +124,11 @@ func CreateConfiguration(name string) error {
 	if err := RunGcloudCommandQuiet("config", "configurations", "create", name); err != nil {
 		return fmt.Errorf("failed to create configuration %q: %w", name, err)
 	}
+
 	return nil
 }
 
-// DeleteConfiguration deletes a gcloud configuration
+// DeleteConfiguration deletes a gcloud configuration.
 func DeleteConfiguration(name string) error {
 	if !ConfigurationExists(name) {
 		return fmt.Errorf("configuration %q does not exist", name)
@@ -141,10 +146,11 @@ func DeleteConfiguration(name string) error {
 	if err := RunGcloudCommandQuiet("config", "configurations", "delete", name, "--quiet"); err != nil {
 		return fmt.Errorf("failed to delete configuration %q: %w", name, err)
 	}
+
 	return nil
 }
 
-// CloneConfiguration creates a new configuration by copying properties from an existing one
+// CloneConfiguration creates a new configuration by copying properties from an existing one.
 func CloneConfiguration(sourceName, targetName string) error {
 	if !ConfigurationExists(sourceName) {
 		return fmt.Errorf("source configuration %q does not exist", sourceName)
@@ -164,16 +170,13 @@ func CloneConfiguration(sourceName, targetName string) error {
 	}
 
 	if err := copyConfigProperties(sourceConfig, targetName); err != nil {
-		if cleanupErr := cleanupConfiguration(targetName); cleanupErr != nil {
-			return fmt.Errorf("failed to copy properties: %w (cleanup also failed: %v)", err, cleanupErr)
-		}
-		return fmt.Errorf("failed to copy properties: %w", err)
+		return discardConfiguration(targetName, "copy properties", err)
 	}
 
 	return nil
 }
 
-// RenameConfiguration renames a gcloud configuration
+// RenameConfiguration renames a gcloud configuration.
 func RenameConfiguration(oldName, newName string) error {
 	if !ConfigurationExists(oldName) {
 		return fmt.Errorf("configuration %q does not exist", oldName)
@@ -195,19 +198,13 @@ func RenameConfiguration(oldName, newName string) error {
 	}
 
 	if err := copyConfigProperties(oldConfig, newName); err != nil {
-		if cleanupErr := cleanupConfiguration(newName); cleanupErr != nil {
-			return fmt.Errorf("failed to copy properties: %w (cleanup also failed: %v)", err, cleanupErr)
-		}
-		return fmt.Errorf("failed to copy properties: %w", err)
+		return discardConfiguration(newName, "copy properties", err)
 	}
 
 	// The old configuration cannot be deleted while it is active.
 	if oldConfig.IsActive {
 		if err := ActivateConfiguration(newName); err != nil {
-			if cleanupErr := cleanupConfiguration(newName); cleanupErr != nil {
-				return fmt.Errorf("failed to activate configuration: %w (cleanup also failed: %v)", err, cleanupErr)
-			}
-			return fmt.Errorf("failed to activate configuration: %w", err)
+			return discardConfiguration(newName, "activate configuration", err)
 		}
 	}
 
@@ -235,6 +232,7 @@ func SetConfigProperties(targetName, account, project, region, zone string) erro
 		if p.value == "" {
 			continue
 		}
+
 		if err := RunGcloudCommandQuiet("config", "set", p.key, p.value, "--configuration", targetName); err != nil {
 			return fmt.Errorf("failed to set %s property: %w", p.key, err)
 		}
@@ -257,45 +255,59 @@ func cleanupConfiguration(name string) error {
 	if err := DeleteConfiguration(name); err != nil {
 		return fmt.Errorf("failed to cleanup configuration %q: %w", name, err)
 	}
+
 	return nil
 }
 
-// GetActiveConfigurationFromList finds the active configuration from a list
+// discardConfiguration removes a partially built configuration after the
+// named action failed, reporting both errors if the removal fails too.
+func discardConfiguration(name, action string, err error) error {
+	if cleanupErr := cleanupConfiguration(name); cleanupErr != nil {
+		return fmt.Errorf("failed to %s: %w (cleanup also failed: %w)", action, err, cleanupErr)
+	}
+
+	return fmt.Errorf("failed to %s: %w", action, err)
+}
+
+// GetActiveConfigurationFromList finds the active configuration from a list.
 func GetActiveConfigurationFromList(configs []Configuration) (*Configuration, error) {
 	for i := range configs {
 		if configs[i].IsActive {
 			return &configs[i], nil
 		}
 	}
-	return nil, fmt.Errorf("no active configuration found")
+
+	return nil, errors.New("no active configuration found")
 }
 
-// FindConfigurationByName finds a configuration by name from a list
-// Returns the configuration and a boolean indicating if it was found
+// FindConfigurationByName finds a configuration by name from a list.
+// It reports whether the configuration was found.
 func FindConfigurationByName(configs []Configuration, name string) (*Configuration, bool) {
 	for i := range configs {
 		if configs[i].Name == name {
 			return &configs[i], true
 		}
 	}
+
 	return nil, false
 }
 
-// ConfigurationExistsInList checks if a configuration exists in a list
+// ConfigurationExistsInList checks if a configuration exists in a list.
 func ConfigurationExistsInList(configs []Configuration, name string) bool {
 	_, found := FindConfigurationByName(configs, name)
+
 	return found
 }
 
 var configNameRegex = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]*$`)
 
-// MaxConfigNameLength is the maximum allowed length for a configuration name
+// MaxConfigNameLength is the maximum allowed length for a configuration name.
 const MaxConfigNameLength = 63
 
-// ValidateConfigurationName validates a configuration name
+// ValidateConfigurationName validates a configuration name.
 func ValidateConfigurationName(name string) error {
 	if name == "" {
-		return fmt.Errorf("configuration name cannot be empty")
+		return errors.New("configuration name cannot be empty")
 	}
 
 	if len(name) > MaxConfigNameLength {
@@ -303,7 +315,8 @@ func ValidateConfigurationName(name string) error {
 	}
 
 	if !configNameRegex.MatchString(name) {
-		return fmt.Errorf("configuration name must start with a letter and contain only alphanumeric characters, hyphens, and underscores")
+		return errors.New("configuration name must start with a letter and contain only " +
+			"alphanumeric characters, hyphens, and underscores")
 	}
 
 	return nil

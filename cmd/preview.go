@@ -29,13 +29,15 @@ func runPreview(cmd *cobra.Command, args []string) error {
 	configName, err := interactive.ParseConfigurationName(input)
 	if err != nil {
 		fmt.Printf("Configuration: %s\n\n(Could not parse configuration name)\n", input)
-		return nil
+
+		return nil //nolint:nilerr // reported as preview text, see above
 	}
 
 	config, err := gcloud.GetConfigurationInfo(configName)
 	if err != nil {
 		fmt.Printf("Configuration: %s\n\n(Details unavailable)\n", configName)
-		return nil
+
+		return nil //nolint:nilerr // reported as preview text, see above
 	}
 
 	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")

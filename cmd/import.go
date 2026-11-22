@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -53,8 +54,11 @@ func parseImportData(data []byte, ext string) (ExportConfig, error) {
 	// field would silently decode as empty.
 	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
 
-	var cfg ExportConfig
-	var err error
+	var (
+		cfg ExportConfig
+		err error
+	)
+
 	switch ext {
 	case ".yaml", ".yml":
 		err = yaml.Unmarshal(data, &cfg)
@@ -65,24 +69,33 @@ func parseImportData(data []byte, ext string) (ExportConfig, error) {
 			err = json.Unmarshal(data, &cfg)
 		}
 	}
-	return cfg, err
+
+	if err != nil {
+		return ExportConfig{}, fmt.Errorf("failed to parse file: %w", err)
+	}
+
+	return cfg, nil
 }
 
-func runImport(cmd *cobra.Command, args []string) error {
-	filePath := args[0]
-
+func readImportFile(filePath string) (ExportConfig, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		output.PrintError(fmt.Sprintf("failed to read file: %v", err), !noColorFlag)
-		return err
+
+		return ExportConfig{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	importConfig, err := parseImportData(data, strings.ToLower(filepath.Ext(filePath)))
 	if err != nil {
-		output.PrintError(fmt.Sprintf("failed to parse file: %v", err), !noColorFlag)
-		return err
+		output.PrintError(err.Error(), !noColorFlag)
+
+		return ExportConfig{}, err
 	}
 
+	return importConfig, nil
+}
+
+func resolveImportName(importConfig ExportConfig) (string, error) {
 	configName := importConfig.Name
 	if importNameFlag != "" {
 		configName = importNameFlag
@@ -90,36 +103,71 @@ func runImport(cmd *cobra.Command, args []string) error {
 
 	if configName == "" {
 		output.PrintError("configuration name is required (use --name or include 'name' in the file)", !noColorFlag)
-		return fmt.Errorf("missing configuration name")
+
+		return "", errors.New("missing configuration name")
 	}
 
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
-		return err
+
+		return "", err
 	}
 
+	return configName, nil
+}
+
+func writeImportedConfiguration(configName string, importConfig ExportConfig) error {
 	if gcloud.ConfigurationExists(configName) {
 		if !importOverwriteFlag {
-			output.PrintError(fmt.Sprintf("configuration %q already exists (use --overwrite to replace)", configName), !noColorFlag)
-			return fmt.Errorf("configuration already exists")
+			output.PrintError(
+				fmt.Sprintf("configuration %q already exists (use --overwrite to replace)", configName), !noColorFlag)
+
+			return errors.New("configuration already exists")
 		}
+
 		if err := gcloud.DeleteConfiguration(configName); err != nil {
 			output.PrintError(fmt.Sprintf("failed to delete existing configuration: %v", err), !noColorFlag)
+
 			return err
 		}
 	}
 
 	if err := gcloud.CreateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
-	if err := gcloud.SetConfigProperties(configName, importConfig.Account, importConfig.Project, importConfig.Region, importConfig.Zone); err != nil {
+	err := gcloud.SetConfigProperties(
+		configName, importConfig.Account, importConfig.Project, importConfig.Region, importConfig.Zone)
+	if err != nil {
 		// Report the property error as the cause; a cleanup failure is only a warning.
 		if cleanupErr := gcloud.DeleteConfiguration(configName); cleanupErr != nil {
 			fmt.Fprintf(os.Stderr, "Warning: failed to cleanup configuration: %v\n", cleanupErr)
 		}
+
 		output.PrintError(err.Error(), !noColorFlag)
+
+		return err
+	}
+
+	return nil
+}
+
+func runImport(cmd *cobra.Command, args []string) error {
+	filePath := args[0]
+
+	importConfig, err := readImportFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	configName, err := resolveImportName(importConfig)
+	if err != nil {
+		return err
+	}
+
+	if err := writeImportedConfiguration(configName, importConfig); err != nil {
 		return err
 	}
 
@@ -128,8 +176,10 @@ func runImport(cmd *cobra.Command, args []string) error {
 	if importActivateFlag {
 		if err := gcloud.ActivateConfiguration(configName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)
+
 			return err
 		}
+
 		output.PrintSuccess(fmt.Sprintf("activated configuration %q", configName), !noColorFlag)
 	}
 

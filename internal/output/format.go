@@ -12,10 +12,10 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-// Format represents the output format type
+// Format represents the output format type.
 type Format string
 
-// Output format constants
+// Output format constants.
 const (
 	FormatDefault Format = ""
 	FormatJSON    Format = "json"
@@ -24,7 +24,17 @@ const (
 	FormatName    Format = "name"
 )
 
-// PrintConfigurations prints all configurations in a formatted way
+const ellipsis = "..."
+
+const (
+	wideRowFormat    = "%s  %-*s  %-*s  %-*s  %-*s  %s\n"
+	wideNameWidth    = 20
+	wideAccountWidth = 30
+	wideProjectWidth = 25
+	wideRegionWidth  = 15
+)
+
+// PrintConfigurations prints all configurations in a formatted way.
 func PrintConfigurations(configs []gcloud.Configuration, useColor bool) {
 	if !useColor {
 		color.NoColor = true
@@ -37,6 +47,7 @@ func PrintConfigurations(configs []gcloud.Configuration, useColor bool) {
 	for _, config := range configs {
 		marker := " "
 		nameColor := cyan
+
 		if config.IsActive {
 			marker = "*"
 			nameColor = yellow
@@ -48,17 +59,18 @@ func PrintConfigurations(configs []gcloud.Configuration, useColor bool) {
 		line := fmt.Sprintf("%s %s", marker, nameColor(config.Name))
 
 		if account != "" {
-			line += fmt.Sprintf(" %s", gray(fmt.Sprintf("(%s)", account)))
+			line += " " + gray(fmt.Sprintf("(%s)", account))
 		}
+
 		if project != "" {
-			line += fmt.Sprintf(" %s", gray(fmt.Sprintf("[%s]", project)))
+			line += " " + gray(fmt.Sprintf("[%s]", project))
 		}
 
 		fmt.Println(line)
 	}
 }
 
-// PrintCurrentConfiguration prints the current configuration name
+// PrintCurrentConfiguration prints the current configuration name.
 func PrintCurrentConfiguration(config *gcloud.Configuration, useColor bool) {
 	if !useColor {
 		color.NoColor = true
@@ -68,7 +80,7 @@ func PrintCurrentConfiguration(config *gcloud.Configuration, useColor bool) {
 	fmt.Println(yellow(config.Name))
 }
 
-// PrintConfigurationDetails prints detailed information about a configuration
+// PrintConfigurationDetails prints detailed information about a configuration.
 func PrintConfigurationDetails(config *gcloud.Configuration, useColor bool) {
 	if !useColor {
 		color.NoColor = true
@@ -102,7 +114,7 @@ func PrintConfigurationDetails(config *gcloud.Configuration, useColor bool) {
 	}
 }
 
-// PrintError prints an error message
+// PrintError prints an error message.
 func PrintError(message string, useColor bool) {
 	if !useColor {
 		color.NoColor = true
@@ -112,7 +124,7 @@ func PrintError(message string, useColor bool) {
 	fmt.Printf("%s %s\n", red("Error:"), message)
 }
 
-// PrintSuccess prints a success message
+// PrintSuccess prints a success message.
 func PrintSuccess(message string, useColor bool) {
 	if !useColor {
 		color.NoColor = true
@@ -122,27 +134,30 @@ func PrintSuccess(message string, useColor bool) {
 	fmt.Printf("%s %s\n", green("Success:"), message)
 }
 
-// FormatConfigurationName formats a configuration name with marker if active
+// FormatConfigurationName formats a configuration name with marker if active.
 func FormatConfigurationName(name string, isActive bool) string {
 	marker := " "
 	if isActive {
 		marker = "*"
 	}
+
 	return fmt.Sprintf("%s %s", marker, name)
 }
 
-// TruncateString truncates a string to a maximum length
+// TruncateString truncates a string to a maximum length.
 func TruncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
 	}
-	if maxLen <= 3 {
+
+	if maxLen <= len(ellipsis) {
 		return s[:maxLen]
 	}
-	return s[:maxLen-3] + "..."
+
+	return s[:maxLen-len(ellipsis)] + ellipsis
 }
 
-// AlignColumns aligns text in columns
+// AlignColumns aligns text in columns.
 func AlignColumns(rows [][]string, padding int) []string {
 	if len(rows) == 0 {
 		return nil
@@ -163,8 +178,10 @@ func AlignColumns(rows [][]string, padding int) []string {
 	result := make([]string, len(rows))
 	for i, row := range rows {
 		var parts []string
+
 		for j, cell := range row {
 			cleanCell := removeANSICodes(cell)
+
 			spaces := maxWidths[j] - len(cleanCell) + padding
 			if j < colCount-1 {
 				parts = append(parts, cell+strings.Repeat(" ", spaces))
@@ -172,6 +189,7 @@ func AlignColumns(rows [][]string, padding int) []string {
 				parts = append(parts, cell)
 			}
 		}
+
 		result[i] = strings.Join(parts, "")
 	}
 
@@ -182,36 +200,41 @@ func AlignColumns(rows [][]string, padding int) []string {
 // fatih/color emits; other escape sequences are not handled.
 func removeANSICodes(s string) string {
 	inEscape := false
+
 	var result strings.Builder
 
 	for _, r := range s {
 		if r == '\x1b' {
 			inEscape = true
+
 			continue
 		}
+
 		if inEscape {
 			if r == 'm' {
 				inEscape = false
 			}
+
 			continue
 		}
+
 		result.WriteRune(r)
 	}
 
 	return result.String()
 }
 
-// ConfigOutput represents configuration data for JSON/YAML output
+// ConfigOutput represents configuration data for JSON/YAML output.
 type ConfigOutput struct {
-	Name     string `json:"name" yaml:"name"`
-	IsActive bool   `json:"is_active" yaml:"is_active"`
+	Name     string `json:"name"              yaml:"name"`
+	IsActive bool   `json:"is_active"         yaml:"is_active"`
 	Account  string `json:"account,omitempty" yaml:"account,omitempty"`
 	Project  string `json:"project,omitempty" yaml:"project,omitempty"`
-	Region   string `json:"region,omitempty" yaml:"region,omitempty"`
-	Zone     string `json:"zone,omitempty" yaml:"zone,omitempty"`
+	Region   string `json:"region,omitempty"  yaml:"region,omitempty"`
+	Zone     string `json:"zone,omitempty"    yaml:"zone,omitempty"`
 }
 
-// PrintConfigurationsWithFormat prints configurations in the specified format
+// PrintConfigurationsWithFormat prints configurations in the specified format.
 func PrintConfigurationsWithFormat(configs []gcloud.Configuration, format Format, useColor bool) error {
 	switch format {
 	case FormatJSON:
@@ -220,53 +243,56 @@ func PrintConfigurationsWithFormat(configs []gcloud.Configuration, format Format
 		return printConfigurationsYAML(configs)
 	case FormatWide:
 		printConfigurationsWide(configs, useColor)
+
 		return nil
 	case FormatName:
 		printConfigurationsName(configs)
+
+		return nil
+	case FormatDefault:
+		PrintConfigurations(configs, useColor)
+
 		return nil
 	default:
-		PrintConfigurations(configs, useColor)
-		return nil
+		return fmt.Errorf("unsupported output format: %q", format)
 	}
 }
 
-func printConfigurationsJSON(configs []gcloud.Configuration) error {
-	output := make([]ConfigOutput, len(configs))
-	for i, c := range configs {
-		output[i] = ConfigOutput{
-			Name:     c.Name,
-			IsActive: c.IsActive,
-			Account:  c.Properties.Core.Account,
-			Project:  c.Properties.Core.Project,
-			Region:   c.Properties.Compute.Region,
-			Zone:     c.Properties.Compute.Zone,
+func toConfigOutputs(configs []gcloud.Configuration) []ConfigOutput {
+	outputs := make([]ConfigOutput, len(configs))
+	for i, config := range configs {
+		outputs[i] = ConfigOutput{
+			Name:     config.Name,
+			IsActive: config.IsActive,
+			Account:  config.Properties.Core.Account,
+			Project:  config.Properties.Core.Project,
+			Region:   config.Properties.Compute.Region,
+			Zone:     config.Properties.Compute.Zone,
 		}
 	}
-	data, err := json.MarshalIndent(output, "", "  ")
+
+	return outputs
+}
+
+func printConfigurationsJSON(configs []gcloud.Configuration) error {
+	data, err := json.MarshalIndent(toConfigOutputs(configs), "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode configurations as JSON: %w", err)
 	}
+
 	fmt.Println(string(data))
+
 	return nil
 }
 
 func printConfigurationsYAML(configs []gcloud.Configuration) error {
-	output := make([]ConfigOutput, len(configs))
-	for i, c := range configs {
-		output[i] = ConfigOutput{
-			Name:     c.Name,
-			IsActive: c.IsActive,
-			Account:  c.Properties.Core.Account,
-			Project:  c.Properties.Core.Project,
-			Region:   c.Properties.Compute.Region,
-			Zone:     c.Properties.Compute.Zone,
-		}
-	}
-	data, err := yaml.Marshal(output)
+	data, err := yaml.Marshal(toConfigOutputs(configs))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode configurations as YAML: %w", err)
 	}
+
 	fmt.Print(string(data))
+
 	return nil
 }
 
@@ -280,17 +306,18 @@ func printConfigurationsWide(configs []gcloud.Configuration, useColor bool) {
 	gray := color.New(color.FgHiBlack).SprintFunc()
 	bold := color.New(color.Bold).SprintFunc()
 
-	fmt.Printf("%s  %-20s  %-30s  %-25s  %-15s  %s\n",
+	fmt.Printf(wideRowFormat,
 		bold(" "),
-		bold("NAME"),
-		bold("ACCOUNT"),
-		bold("PROJECT"),
-		bold("REGION"),
+		wideNameWidth, bold("NAME"),
+		wideAccountWidth, bold("ACCOUNT"),
+		wideProjectWidth, bold("PROJECT"),
+		wideRegionWidth, bold("REGION"),
 		bold("ZONE"))
 
 	for _, config := range configs {
 		marker := " "
 		nameColor := cyan
+
 		if config.IsActive {
 			marker = "*"
 			nameColor = yellow
@@ -300,25 +327,28 @@ func printConfigurationsWide(configs []gcloud.Configuration, useColor bool) {
 		if account == "" {
 			account = gray("-")
 		}
+
 		project := config.Properties.Core.Project
 		if project == "" {
 			project = gray("-")
 		}
+
 		region := config.Properties.Compute.Region
 		if region == "" {
 			region = gray("-")
 		}
+
 		zone := config.Properties.Compute.Zone
 		if zone == "" {
 			zone = gray("-")
 		}
 
-		fmt.Printf("%s  %-20s  %-30s  %-25s  %-15s  %s\n",
+		fmt.Printf(wideRowFormat,
 			marker,
-			nameColor(TruncateString(config.Name, 20)),
-			TruncateString(account, 30),
-			TruncateString(project, 25),
-			TruncateString(region, 15),
+			wideNameWidth, nameColor(TruncateString(config.Name, wideNameWidth)),
+			wideAccountWidth, TruncateString(account, wideAccountWidth),
+			wideProjectWidth, TruncateString(project, wideProjectWidth),
+			wideRegionWidth, TruncateString(region, wideRegionWidth),
 			zone)
 	}
 }
@@ -329,7 +359,7 @@ func printConfigurationsName(configs []gcloud.Configuration) {
 	}
 }
 
-// ValidateOutputFormat validates the output format string
+// ValidateOutputFormat validates the output format string.
 func ValidateOutputFormat(format string) (Format, error) {
 	switch strings.ToLower(format) {
 	case "", "default":

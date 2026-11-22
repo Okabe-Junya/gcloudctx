@@ -153,8 +153,10 @@ func TestValidateOutputFormat(t *testing.T) {
 			got, err := ValidateOutputFormat(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateOutputFormat(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+
 				return
 			}
+
 			if got != tt.wantFormat {
 				t.Errorf("ValidateOutputFormat(%q) = %v, want %v", tt.input, got, tt.wantFormat)
 			}
@@ -164,6 +166,7 @@ func TestValidateOutputFormat(t *testing.T) {
 
 func captureStdout(t *testing.T, f func()) string {
 	t.Helper()
+
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
@@ -171,10 +174,12 @@ func captureStdout(t *testing.T, f func()) string {
 	f()
 
 	w.Close()
+
 	os.Stdout = old
 
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
+
 	return buf.String()
 }
 
@@ -211,12 +216,15 @@ func TestPrintConfigurationsWithFormatJSON(t *testing.T) {
 	if len(result) != 2 {
 		t.Fatalf("Expected 2 configurations, got %d", len(result))
 	}
+
 	if result[0].Name != "default" {
 		t.Errorf("Expected first config name 'default', got %q", result[0].Name)
 	}
+
 	if !result[0].IsActive {
 		t.Error("Expected first config to be active")
 	}
+
 	if result[1].Region != "us-central1" {
 		t.Errorf("Expected second config region 'us-central1', got %q", result[1].Region)
 	}
@@ -247,6 +255,7 @@ func TestPrintConfigurationsWithFormatYAML(t *testing.T) {
 	if len(result) != 1 {
 		t.Fatalf("Expected 1 configuration, got %d", len(result))
 	}
+
 	if result[0].Name != "production" {
 		t.Errorf("Expected config name 'production', got %q", result[0].Name)
 	}
@@ -269,6 +278,7 @@ func TestPrintConfigurationsWithFormatName(t *testing.T) {
 	if len(lines) != 3 {
 		t.Fatalf("Expected 3 lines, got %d: %v", len(lines), lines)
 	}
+
 	expected := []string{"alpha", "beta", "gamma"}
 	for i, want := range expected {
 		if lines[i] != want {
@@ -298,9 +308,11 @@ func TestPrintConfigurationsWithFormatWide(t *testing.T) {
 	if !strings.Contains(out, "NAME") {
 		t.Error("Wide format should contain 'NAME' header")
 	}
+
 	if !strings.Contains(out, "ACCOUNT") {
 		t.Error("Wide format should contain 'ACCOUNT' header")
 	}
+
 	if !strings.Contains(out, "dev") {
 		t.Error("Wide format should contain config name 'dev'")
 	}
@@ -323,9 +335,11 @@ func TestPrintConfigurationDetailsDoesNotPanic(t *testing.T) {
 	if !strings.Contains(out, "test-config") {
 		t.Error("Details should contain the config name")
 	}
+
 	if !strings.Contains(out, "active") {
 		t.Error("Details should contain status")
 	}
+
 	if !strings.Contains(out, "user@example.com") {
 		t.Error("Details should contain account")
 	}
@@ -339,6 +353,7 @@ func TestPrintErrorDoesNotPanic(t *testing.T) {
 	if !strings.Contains(out, "Error:") {
 		t.Error("Error output should contain 'Error:' prefix")
 	}
+
 	if !strings.Contains(out, "something went wrong") {
 		t.Error("Error output should contain the error message")
 	}
@@ -352,6 +367,7 @@ func TestPrintSuccessDoesNotPanic(t *testing.T) {
 	if !strings.Contains(out, "Success:") {
 		t.Error("Success output should contain 'Success:' prefix")
 	}
+
 	if !strings.Contains(out, "operation completed") {
 		t.Error("Success output should contain the message")
 	}

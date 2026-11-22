@@ -93,11 +93,13 @@ func TestParseConfigurationName(t *testing.T) {
 				if err == nil {
 					t.Errorf("ParseConfigurationName(%q) expected error, but got none", tt.input)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseConfigurationName(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 

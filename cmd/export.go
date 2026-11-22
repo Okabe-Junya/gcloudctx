@@ -16,13 +16,13 @@ var (
 	exportOutputFlag string
 )
 
-// ExportConfig represents the exported configuration format
+// ExportConfig represents the exported configuration format.
 type ExportConfig struct {
-	Name    string `json:"name" yaml:"name"`
+	Name    string `json:"name"              yaml:"name"`
 	Account string `json:"account,omitempty" yaml:"account,omitempty"`
 	Project string `json:"project,omitempty" yaml:"project,omitempty"`
-	Region  string `json:"region,omitempty" yaml:"region,omitempty"`
-	Zone    string `json:"zone,omitempty" yaml:"zone,omitempty"`
+	Region  string `json:"region,omitempty"  yaml:"region,omitempty"`
+	Zone    string `json:"zone,omitempty"    yaml:"zone,omitempty"`
 }
 
 var exportCmd = &cobra.Command{
@@ -56,8 +56,10 @@ func runExport(cmd *cobra.Command, args []string) error {
 		currentConfig, err := gcloud.GetActiveConfiguration()
 		if err != nil {
 			output.PrintError(err.Error(), !noColorFlag)
+
 			return err
 		}
+
 		configName = currentConfig.Name
 	} else {
 		configName = args[0]
@@ -66,6 +68,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 	config, err := gcloud.GetConfigurationInfo(configName)
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -77,34 +80,45 @@ func runExport(cmd *cobra.Command, args []string) error {
 		Zone:    config.Properties.Compute.Zone,
 	}
 
-	var data []byte
-	switch exportFormatFlag {
-	case "yaml", "yml":
-		data, err = yaml.Marshal(exportConfig)
-	case "json":
-		data, err = json.MarshalIndent(exportConfig, "", "  ")
-		if err == nil {
-			data = append(data, '\n')
-		}
-	default:
-		output.PrintError(fmt.Sprintf("unsupported format: %s (use yaml or json)", exportFormatFlag), !noColorFlag)
-		return fmt.Errorf("unsupported format")
-	}
-
+	data, err := marshalExport(exportConfig, exportFormatFlag)
 	if err != nil {
-		output.PrintError(fmt.Sprintf("failed to marshal configuration: %v", err), !noColorFlag)
+		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	if exportOutputFlag != "" {
 		if err := os.WriteFile(exportOutputFlag, data, 0o600); err != nil {
 			output.PrintError(fmt.Sprintf("failed to write file: %v", err), !noColorFlag)
-			return err
+
+			return fmt.Errorf("failed to write file: %w", err)
 		}
+
 		output.PrintSuccess(fmt.Sprintf("exported configuration %q to %s", configName, exportOutputFlag), !noColorFlag)
 	} else {
 		fmt.Print(string(data))
 	}
 
 	return nil
+}
+
+func marshalExport(cfg ExportConfig, format string) ([]byte, error) {
+	switch format {
+	case "yaml", "yml":
+		data, err := yaml.Marshal(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal configuration: %w", err)
+		}
+
+		return data, nil
+	case "json":
+		data, err := json.MarshalIndent(cfg, "", "  ")
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal configuration: %w", err)
+		}
+
+		return append(data, '\n'), nil
+	default:
+		return nil, fmt.Errorf("unsupported format: %s (use yaml or json)", format)
+	}
 }

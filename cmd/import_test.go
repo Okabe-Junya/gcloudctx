@@ -34,6 +34,7 @@ func TestParseImportData(t *testing.T) {
 			if err != nil {
 				t.Fatalf("parseImportData() error = %v", err)
 			}
+
 			if got != want {
 				t.Errorf("parseImportData() = %+v, want %+v", got, want)
 			}

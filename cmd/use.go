@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Okabe-Junya/gcloudctx/internal/output"
@@ -54,16 +55,19 @@ func runUse(cmd *cobra.Command, args []string) error {
 
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	if !gcloud.ConfigurationExists(configName) {
 		output.PrintError(fmt.Sprintf("configuration %q does not exist", configName), !noColorFlag)
-		return fmt.Errorf("configuration not found")
+
+		return errors.New("configuration not found")
 	}
 
 	if err := local.WriteLocalConfigCurrent(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -71,6 +75,7 @@ func runUse(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		path = local.ConfigFileName
 	}
+
 	output.PrintSuccess(fmt.Sprintf("set local configuration to %q (saved to %s)", configName, path), !noColorFlag)
 
 	if useSwitchFlag {
@@ -84,25 +89,30 @@ func showLocalConfig() error {
 	configName, dir, err := local.FindLocalConfig()
 	if err != nil {
 		output.PrintError("no local configuration found in current directory or parent directories", !noColorFlag)
+
 		return err
 	}
 
 	fmt.Printf("Local configuration: %s\n", configName)
 	fmt.Printf("Found in: %s\n", dir)
+
 	return nil
 }
 
 func unsetLocalConfig() error {
 	if !local.ConfigExists() {
 		output.PrintError("no .gcloudctx file in current directory", !noColorFlag)
-		return fmt.Errorf("no local config")
+
+		return errors.New("no local config")
 	}
 
 	if err := local.RemoveLocalConfigCurrent(); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	output.PrintSuccess("removed .gcloudctx file from current directory", !noColorFlag)
+
 	return nil
 }
