@@ -75,6 +75,7 @@ func TestRootCommandStructure(t *testing.T) {
 	}
 
 	subcommands := rootCmd.Commands()
+
 	subcommandNames := make(map[string]bool)
 	for _, cmd := range subcommands {
 		subcommandNames[cmd.Name()] = true
@@ -107,8 +108,10 @@ func TestRootCommandFlags(t *testing.T) {
 			flag := rootCmd.Flags().Lookup(f.name)
 			if flag == nil {
 				t.Errorf("expected flag %q not found", f.name)
+
 				return
 			}
+
 			if f.shorthand != "" && flag.Shorthand != f.shorthand {
 				t.Errorf("flag %q shorthand = %q, want %q", f.name, flag.Shorthand, f.shorthand)
 			}
@@ -124,6 +127,7 @@ func TestRootCommandAcceptsMaxOneArg(t *testing.T) {
 	if err == nil {
 		t.Error("expected error with 2 args, got nil")
 	}
+
 	if !strings.Contains(err.Error(), "accepts at most 1 arg") {
 		t.Errorf("unexpected error message: %v", err)
 	}
@@ -136,8 +140,10 @@ func TestPreviewCommandIsHidden(t *testing.T) {
 			if !cmd.Hidden {
 				t.Error("preview command should be hidden")
 			}
+
 			return
 		}
 	}
+
 	t.Error("preview command not found")
 }

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// ConfigFileName is the name of the local configuration file
+// ConfigFileName is the name of the local configuration file.
 const ConfigFileName = ".gcloudctx"
 
 // FindLocalConfig searches for a .gcloudctx file starting from the current directory
@@ -48,63 +48,71 @@ func findLocalConfigInPath(startPath string) (configName, dir string, err error)
 		if parent == dir {
 			break
 		}
+
 		dir = parent
 	}
 
 	return "", "", fmt.Errorf("no %s file found", ConfigFileName)
 }
 
-// WriteLocalConfig writes a configuration name to a .gcloudctx file in the specified directory
+// WriteLocalConfig writes a configuration name to a .gcloudctx file in the specified directory.
 func WriteLocalConfig(dir, configName string) error {
 	configPath := filepath.Join(dir, ConfigFileName)
 	if err := os.WriteFile(configPath, []byte(configName+"\n"), 0o600); err != nil {
 		return fmt.Errorf("failed to write %s: %w", configPath, err)
 	}
+
 	return nil
 }
 
-// WriteLocalConfigCurrent writes a configuration name to .gcloudctx in the current directory
+// WriteLocalConfigCurrent writes a configuration name to .gcloudctx in the current directory.
 func WriteLocalConfigCurrent(configName string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
+
 	return WriteLocalConfig(cwd, configName)
 }
 
-// RemoveLocalConfig removes the .gcloudctx file from the specified directory
+// RemoveLocalConfig removes the .gcloudctx file from the specified directory.
 func RemoveLocalConfig(dir string) error {
 	configPath := filepath.Join(dir, ConfigFileName)
 	if err := os.Remove(configPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to remove %s: %w", configPath, err)
 	}
+
 	return nil
 }
 
-// RemoveLocalConfigCurrent removes the .gcloudctx file from the current directory
+// RemoveLocalConfigCurrent removes the .gcloudctx file from the current directory.
 func RemoveLocalConfigCurrent() error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
+
 	return RemoveLocalConfig(cwd)
 }
 
-// GetLocalConfigPath returns the path to the .gcloudctx file in the current directory
+// GetLocalConfigPath returns the path to the .gcloudctx file in the current directory.
 func GetLocalConfigPath() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("failed to get current directory: %w", err)
 	}
+
 	return filepath.Join(cwd, ConfigFileName), nil
 }
 
-// ConfigExists checks if a .gcloudctx file exists in the current directory
+// ConfigExists checks if a .gcloudctx file exists in the current directory.
 func ConfigExists() bool {
 	path, err := GetLocalConfigPath()
 	if err != nil {
 		return false
 	}
+
 	_, err = os.Stat(path)
+
 	return err == nil
 }

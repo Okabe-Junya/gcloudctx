@@ -9,9 +9,11 @@ func TestCreateCommandRequiresExactlyOneArg(t *testing.T) {
 	if err := cmd.Args(cmd, []string{}); err == nil {
 		t.Error("expected error with 0 args")
 	}
+
 	if err := cmd.Args(cmd, []string{"name"}); err != nil {
 		t.Errorf("expected no error with 1 arg, got: %v", err)
 	}
+
 	if err := cmd.Args(cmd, []string{"a", "b"}); err == nil {
 		t.Error("expected error with 2 args")
 	}
@@ -22,6 +24,7 @@ func TestCreateCommandFlags(t *testing.T) {
 	if flag == nil {
 		t.Fatal("expected --activate flag on create command")
 	}
+
 	if flag.DefValue != "false" {
 		t.Errorf("--activate default = %q, want %q", flag.DefValue, "false")
 	}
@@ -32,6 +35,7 @@ func TestDeleteCommandRequiresExactlyOneArg(t *testing.T) {
 	if err := cmd.Args(cmd, []string{}); err == nil {
 		t.Error("expected error with 0 args")
 	}
+
 	if err := cmd.Args(cmd, []string{"name"}); err != nil {
 		t.Errorf("expected no error with 1 arg, got: %v", err)
 	}
@@ -42,6 +46,7 @@ func TestDeleteCommandFlags(t *testing.T) {
 	if flag == nil {
 		t.Fatal("expected --force flag on delete command")
 	}
+
 	if flag.Shorthand != "f" {
 		t.Errorf("--force shorthand = %q, want %q", flag.Shorthand, "f")
 	}
@@ -52,6 +57,7 @@ func TestRenameCommandRequiresExactlyTwoArgs(t *testing.T) {
 	if err := cmd.Args(cmd, []string{"old"}); err == nil {
 		t.Error("expected error with 1 arg")
 	}
+
 	if err := cmd.Args(cmd, []string{"old", "new"}); err != nil {
 		t.Errorf("expected no error with 2 args, got: %v", err)
 	}
@@ -62,6 +68,7 @@ func TestCloneCommandRequiresExactlyTwoArgs(t *testing.T) {
 	if err := cmd.Args(cmd, []string{"src"}); err == nil {
 		t.Error("expected error with 1 arg")
 	}
+
 	if err := cmd.Args(cmd, []string{"src", "dst"}); err != nil {
 		t.Errorf("expected no error with 2 args, got: %v", err)
 	}
@@ -89,9 +96,11 @@ func TestExportCommandFlags(t *testing.T) {
 	if formatFlag == nil {
 		t.Fatal("expected --format flag on export command")
 	}
+
 	if formatFlag.Shorthand != "f" {
 		t.Errorf("--format shorthand = %q, want %q", formatFlag.Shorthand, "f")
 	}
+
 	if formatFlag.DefValue != "yaml" {
 		t.Errorf("--format default = %q, want %q", formatFlag.DefValue, "yaml")
 	}
@@ -116,8 +125,10 @@ func TestImportCommandFlags(t *testing.T) {
 		flag := importCmd.Flags().Lookup(f.name)
 		if flag == nil {
 			t.Errorf("expected --%s flag on import command", f.name)
+
 			continue
 		}
+
 		if flag.DefValue != f.defValue {
 			t.Errorf("--%s default = %q, want %q", f.name, flag.DefValue, f.defValue)
 		}
@@ -129,6 +140,7 @@ func TestImportCommandRequiresExactlyOneArg(t *testing.T) {
 	if err := cmd.Args(cmd, []string{}); err == nil {
 		t.Error("expected error with 0 args")
 	}
+
 	if err := cmd.Args(cmd, []string{"file.yaml"}); err != nil {
 		t.Errorf("expected no error with 1 arg, got: %v", err)
 	}
@@ -154,6 +166,7 @@ func TestAutoCommandAcceptsNoArgs(t *testing.T) {
 	if err := cmd.Args(cmd, []string{}); err != nil {
 		t.Errorf("expected no error with 0 args, got: %v", err)
 	}
+
 	if err := cmd.Args(cmd, []string{"extra"}); err == nil {
 		t.Error("expected error with 1 arg")
 	}

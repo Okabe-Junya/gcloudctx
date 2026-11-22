@@ -1,7 +1,7 @@
 package interactive
 
 import (
-	"os"
+	"slices"
 	"testing"
 )
 
@@ -45,8 +45,7 @@ func TestGetEnvOrDefault(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
-				defer os.Unsetenv(tt.key)
+				t.Setenv(tt.key, tt.envValue)
 			}
 
 			result := getEnvOrDefault(tt.key, tt.defaultValue)
@@ -73,6 +72,7 @@ func TestBuildFzfArgs(t *testing.T) {
 						return args[i+1] == DefaultFzfHeight
 					}
 				}
+
 				return false
 			},
 			description: "should use default height",
@@ -88,6 +88,7 @@ func TestBuildFzfArgs(t *testing.T) {
 						return args[i+1] == "80%"
 					}
 				}
+
 				return false
 			},
 			description: "should use custom height",
@@ -98,12 +99,7 @@ func TestBuildFzfArgs(t *testing.T) {
 				EnvDisablePreview: "1",
 			},
 			checkArgs: func(args []string) bool {
-				for _, arg := range args {
-					if arg == "--preview" {
-						return false
-					}
-				}
-				return true
+				return !slices.Contains(args, "--preview")
 			},
 			description: "should not include preview",
 		},
@@ -113,12 +109,7 @@ func TestBuildFzfArgs(t *testing.T) {
 				EnvDisablePreview: "0",
 			},
 			checkArgs: func(args []string) bool {
-				for _, arg := range args {
-					if arg == "--preview" {
-						return true
-					}
-				}
-				return false
+				return slices.Contains(args, "--preview")
 			},
 			description: "should include preview",
 		},
@@ -127,11 +118,10 @@ func TestBuildFzfArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for key, value := range tt.envSettings {
-				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				t.Setenv(key, value)
 			}
 
-			args := buildFzfArgs("gcloudctx") // Pass dummy command path
+			args := buildFzfArgs("gcloudctx")
 
 			if !tt.checkArgs(args) {
 				t.Errorf("buildFzfArgs() %s\nGot args: %v", tt.description, args)
@@ -141,7 +131,7 @@ func TestBuildFzfArgs(t *testing.T) {
 }
 
 func TestBuildFzfArgsContainsRequiredOptions(t *testing.T) {
-	args := buildFzfArgs("gcloudctx") // Pass dummy command path
+	args := buildFzfArgs("gcloudctx")
 
 	requiredArgs := []string{
 		"--ansi",
@@ -153,13 +143,8 @@ func TestBuildFzfArgsContainsRequiredOptions(t *testing.T) {
 	}
 
 	for _, required := range requiredArgs {
-		found := false
-		for _, arg := range args {
-			if arg == required {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(args, required)
+
 		if !found {
 			t.Errorf("buildFzfArgs() missing required argument: %s", required)
 		}

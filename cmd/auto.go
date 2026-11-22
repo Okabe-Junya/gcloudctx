@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -44,17 +45,20 @@ func runAuto(cmd *cobra.Command, args []string) error {
 		// Print to stderr so shell cd hooks (which redirect 2>/dev/null) stay silent,
 		// while manual invocations show feedback.
 		fmt.Fprintln(os.Stderr, "no .gcloudctx file found in current or parent directories")
-		return nil
+
+		return nil //nolint:nilerr // a directory without .gcloudctx is the normal case for cd hooks
 	}
 
 	if !gcloud.ConfigurationExists(configName) {
 		output.PrintError(fmt.Sprintf("configuration %q (from %s/.gcloudctx) does not exist", configName, dir), !noColorFlag)
-		return fmt.Errorf("configuration not found")
+
+		return errors.New("configuration not found")
 	}
 
 	currentConfig, err := gcloud.GetActiveConfiguration()
 	if err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -68,9 +72,11 @@ func runAuto(cmd *cobra.Command, args []string) error {
 
 	if err := gcloud.ActivateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	output.PrintSuccess(fmt.Sprintf("switched to configuration %q (from %s)", configName, dir), !noColorFlag)
+
 	return nil
 }

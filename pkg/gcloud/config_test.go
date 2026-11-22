@@ -52,14 +52,18 @@ func TestGetActiveConfigurationFromList(t *testing.T) {
 			got, err := GetActiveConfigurationFromList(tt.configs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetActiveConfigurationFromList() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if err != nil && tt.errContains != "" {
 				if !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("error message = %q, want to contain %q", err.Error(), tt.errContains)
 				}
+
 				return
 			}
+
 			if got != nil && got.Name != tt.wantName {
 				t.Errorf("GetActiveConfigurationFromList() = %v, want %v", got.Name, tt.wantName)
 			}
@@ -113,8 +117,10 @@ func TestFindConfigurationByName(t *testing.T) {
 			got, found := FindConfigurationByName(configs, tt.configName)
 			if found != tt.wantFound {
 				t.Errorf("FindConfigurationByName() found = %v, want %v", found, tt.wantFound)
+
 				return
 			}
+
 			if found && tt.wantProject != "" && got.Properties.Core.Project != tt.wantProject {
 				t.Errorf("FindConfigurationByName() project = %v, want %v", got.Properties.Core.Project, tt.wantProject)
 			}
@@ -166,7 +172,7 @@ func TestValidateConfigurationName(t *testing.T) {
 		{"starts with number", "123config", true},
 		{"contains space", "my config", true},
 		{"contains special char", "my@config", true},
-		{"too long", "this-is-a-very-long-configuration-name-that-exceeds-the-maximum-allowed-length-for-gcloud-configurations", true},
+		{"too long", "a" + strings.Repeat("b", MaxConfigNameLength), true},
 	}
 
 	for _, tt := range tests {
@@ -236,12 +242,15 @@ func TestFindConfigurationByNameReturnsProperties(t *testing.T) {
 	if !found {
 		t.Fatal("expected to find 'full-config'")
 	}
+
 	if got.Properties.Core.Account != "test@example.com" {
 		t.Errorf("account = %q, want %q", got.Properties.Core.Account, "test@example.com")
 	}
+
 	if got.Properties.Compute.Region != "asia-northeast1" {
 		t.Errorf("region = %q, want %q", got.Properties.Compute.Region, "asia-northeast1")
 	}
+
 	if got.Properties.Compute.Zone != "asia-northeast1-a" {
 		t.Errorf("zone = %q, want %q", got.Properties.Compute.Zone, "asia-northeast1-a")
 	}
@@ -251,6 +260,7 @@ func TestConfigurationExistsInListEmpty(t *testing.T) {
 	if ConfigurationExistsInList(nil, "any") {
 		t.Error("expected false for nil list")
 	}
+
 	if ConfigurationExistsInList([]Configuration{}, "any") {
 		t.Error("expected false for empty list")
 	}
@@ -295,12 +305,15 @@ func TestConfigurationJSONUnmarshal(t *testing.T) {
 	if configs[0].Name != "default" {
 		t.Errorf("first config name = %q, want %q", configs[0].Name, "default")
 	}
+
 	if !configs[0].IsActive {
 		t.Error("expected first config to be active")
 	}
+
 	if configs[0].Properties.Core.Account != "user@example.com" {
 		t.Errorf("first config account = %q, want %q", configs[0].Properties.Core.Account, "user@example.com")
 	}
+
 	if configs[0].Properties.Compute.Region != "us-central1" {
 		t.Errorf("first config region = %q, want %q", configs[0].Properties.Compute.Region, "us-central1")
 	}
@@ -308,12 +321,15 @@ func TestConfigurationJSONUnmarshal(t *testing.T) {
 	if configs[1].Name != "staging" {
 		t.Errorf("second config name = %q, want %q", configs[1].Name, "staging")
 	}
+
 	if configs[1].IsActive {
 		t.Error("expected second config to be inactive")
 	}
+
 	if configs[1].Properties.Core.Account != "" {
 		t.Errorf("second config account should be empty, got %q", configs[1].Properties.Core.Account)
 	}
+
 	if configs[1].Properties.Core.Project != "staging-project" {
 		t.Errorf("second config project = %q, want %q", configs[1].Properties.Core.Project, "staging-project")
 	}
@@ -367,9 +383,11 @@ func TestConfigurationJSONUnmarshalStringBool(t *testing.T) {
 	if bool(configs[0].Properties.Core.DisableUsageReport) != false {
 		t.Error("expected disable_usage_reporting to be false for 'False' string")
 	}
+
 	if bool(configs[1].Properties.Core.DisableUsageReport) != true {
 		t.Error("expected disable_usage_reporting to be true for 'True' string")
 	}
+
 	if bool(configs[2].Properties.Core.DisableUsageReport) != true {
 		t.Error("expected disable_usage_reporting to be true for native true boolean")
 	}
@@ -386,6 +404,7 @@ func TestMultipleActiveConfigurations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if got.Name != "first" {
 		t.Errorf("expected first active config 'first', got %q", got.Name)
 	}

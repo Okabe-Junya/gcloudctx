@@ -36,12 +36,14 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	if err := gcloud.ValidateConfigurationName(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first.
 	if err := gcloud.CreateConfiguration(configName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -50,8 +52,10 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	if activateFlag {
 		if err := gcloud.ActivateConfiguration(configName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)
+
 			return err
 		}
+
 		output.PrintSuccess(fmt.Sprintf("activated configuration %q", configName), !noColorFlag)
 	}
 

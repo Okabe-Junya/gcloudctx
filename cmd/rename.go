@@ -20,30 +20,11 @@ Examples:
   gcloudctx rename old-config new-config`,
 	Args:              cobra.ExactArgs(2),
 	RunE:              runRename,
-	ValidArgsFunction: completeConfigNamesForRename,
+	ValidArgsFunction: completeConfigNames,
 }
 
 func init() {
 	rootCmd.AddCommand(renameCmd)
-}
-
-func completeConfigNamesForRename(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// The new name does not exist yet, so only the old name is completed.
-	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	configs, err := gcloud.ListConfigurations()
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	var names []string
-	for _, config := range configs {
-		names = append(names, config.Name)
-	}
-
-	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func runRename(cmd *cobra.Command, args []string) error {
@@ -52,15 +33,18 @@ func runRename(cmd *cobra.Command, args []string) error {
 
 	if err := gcloud.ValidateConfigurationName(newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	// No explicit CheckGcloudInstalled: every pkg/gcloud call runs it first.
 	if err := gcloud.RenameConfiguration(oldName, newName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	output.PrintSuccess(fmt.Sprintf("renamed configuration %q to %q", oldName, newName), !noColorFlag)
+
 	return nil
 }

@@ -54,6 +54,7 @@ PowerShell:
 		case "powershell":
 			return rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
 		}
+
 		return nil
 	},
 }

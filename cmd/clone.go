@@ -25,31 +25,12 @@ Examples:
   gcloudctx clone my-config my-config-backup --activate`,
 	Args:              cobra.ExactArgs(2),
 	RunE:              runClone,
-	ValidArgsFunction: completeConfigNamesForClone,
+	ValidArgsFunction: completeConfigNames,
 }
 
 func init() {
 	cloneCmd.Flags().BoolVar(&cloneActivateFlag, "activate", false, "Activate the newly cloned configuration")
 	rootCmd.AddCommand(cloneCmd)
-}
-
-func completeConfigNamesForClone(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	// The target name is new by definition, so only the source is completed.
-	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	configs, err := gcloud.ListConfigurations()
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	var names []string
-	for _, config := range configs {
-		names = append(names, config.Name)
-	}
-
-	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func runClone(cmd *cobra.Command, args []string) error {
@@ -58,11 +39,13 @@ func runClone(cmd *cobra.Command, args []string) error {
 
 	if err := gcloud.ValidateConfigurationName(targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
 	if err := gcloud.CloneConfiguration(sourceName, targetName); err != nil {
 		output.PrintError(err.Error(), !noColorFlag)
+
 		return err
 	}
 
@@ -71,8 +54,10 @@ func runClone(cmd *cobra.Command, args []string) error {
 	if cloneActivateFlag {
 		if err := gcloud.ActivateConfiguration(targetName); err != nil {
 			output.PrintError(err.Error(), !noColorFlag)
+
 			return err
 		}
+
 		output.PrintSuccess(fmt.Sprintf("activated configuration %q", targetName), !noColorFlag)
 	}
 

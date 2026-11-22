@@ -3,22 +3,73 @@ run:
   modules-download-mode: readonly
   tests: true
 linters:
-  default: standard
-  enable:
-    - gocritic
-    - gosec
-    - misspell
-    - nolintlint
-    - revive
-    - unconvert
-    - whitespace
+  default: all
+  disable:
+    # Deprecated; their successors (exhaustruct_v5, gomodguard_v2, wsl_v5)
+    # come in through `default: all`.
+    - exhaustruct
+    - gomodguard
+    - wsl
+    # Go relies on zero values; cobra.Command alone has dozens of optional
+    # fields that are meant to be left unset.
+    - exhaustruct_v5
+    # cobra's documented layout registers package-level commands and flags
+    # from init().
+    - gochecknoglobals
+    - gochecknoinits
+    # Error values here are only reported to the user and no caller branches
+    # on them; sentinels exist where one does (pkg/interactive).
+    - err113
+    # The scoped `if err := f(); err != nil` form is idiomatic Go.
+    - noinlineerr
+    # Named results document same-typed returns such as (configName, dir string, err error).
+    - nonamedreturns
+    # Threading a context.Context through every gcloud call changes the public
+    # API of pkg/gcloud; tracked as a separate change.
+    - noctx
+    # Most tests mutate process-wide state (os.Stdout, env vars, color.NoColor,
+    # cobra's global commands), and the suite runs in about a second.
+    - paralleltest
+    # Tests exercise unexported helpers directly.
+    - testpackage
+    # Short names in short scopes follow Go convention
+    # (https://go.dev/wiki/CodeReviewComments#variable-names).
+    - varnamelen
   settings:
+    depguard:
+      rules:
+        main:
+          allow:
+            - $gostd
+            - github.com/Okabe-Junya/gcloudctx
+            - github.com/fatih/color
+            - github.com/goccy/go-yaml
+            - github.com/spf13/cobra
+    forbidigo:
+      # Printing to stdout via fmt is how this CLI produces output; only the
+      # print/println builtins (which write to stderr) are forbidden.
+      forbid:
+        - pattern: ^print(ln)?$
     gosec:
       # G204/G304: gcloudctx is a CLI that intentionally shells out to
       # gcloud/fzf and reads config files from user-controlled paths.
       excludes:
         - G204
         - G304
+    mnd:
+      ignored-functions:
+        - ^cobra\.(Exact|Maximum|Minimum)Args$
+        - ^os\.WriteFile$
+    tagliatelle:
+      # Tags mirror gcloud's snake_case JSON and the existing export format.
+      case:
+        rules:
+          json: snake
+          yaml: snake
+    wrapcheck:
+      # Packages inside this module already wrap with context before returning.
+      ignore-package-globs:
+        - github.com/Okabe-Junya/gcloudctx/*
   exclusions:
     generated: lax
     rules:
@@ -26,6 +77,13 @@ linters:
           - errcheck
           - gocritic
           - gosec
+        path: _test\.go
+      # Table-driven tests are long and branchy by design, and their inline
+      # fixture literals read better than shared constants.
+      - linters:
+          - cyclop
+          - funlen
+          - goconst
         path: _test\.go
       # cobra's RunE/ValidArgsFunction callback signature is fixed, so cmd
       # is routinely unused; revive's default unused-parameter rule would

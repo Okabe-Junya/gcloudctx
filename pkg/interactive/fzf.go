@@ -5,6 +5,7 @@ package interactive
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,18 +15,55 @@ import (
 	"github.com/Okabe-Junya/gcloudctx/pkg/gcloud"
 )
 
-// IsFzfInstalled checks if fzf is installed
+// IsFzfInstalled checks if fzf is installed.
 func IsFzfInstalled() bool {
 	_, err := exec.LookPath("fzf")
+
 	return err == nil
 }
+
+// fzfExitInterrupted is fzf's exit status when the user cancels with ESC or Ctrl-C.
+const fzfExitInterrupted = 130
 
 func getSelfCommand() (string, error) {
 	executable, err := os.Executable()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to locate executable: %w", err)
 	}
-	return filepath.EvalSymlinks(executable)
+
+	resolved, err := filepath.EvalSymlinks(executable)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve executable path: %w", err)
+	}
+
+	return resolved, nil
+}
+
+// formatFzfInput renders one "* name (account) [project]" line per
+// configuration, the shape ParseConfigurationName expects back.
+func formatFzfInput(configs []gcloud.Configuration, currentConfig string) string {
+	var builder strings.Builder
+
+	for _, config := range configs {
+		marker := " "
+		if config.Name == currentConfig {
+			marker = "*"
+		}
+
+		builder.WriteString(marker + " " + config.Name)
+
+		if config.Properties.Core.Account != "" {
+			builder.WriteString(" (" + config.Properties.Core.Account + ")")
+		}
+
+		if config.Properties.Core.Project != "" {
+			builder.WriteString(" [" + config.Properties.Core.Project + "]")
+		}
+
+		builder.WriteString("\n")
+	}
+
+	return builder.String()
 }
 
 // SelectConfigurationInteractive lets the user pick a configuration with fzf
@@ -39,49 +77,28 @@ func SelectConfigurationInteractive(configs []gcloud.Configuration, currentConfi
 		return "", ErrNoConfigurations
 	}
 
-	// Lines use the "* name (account) [project]" shape ParseConfigurationName expects.
-	var inputBuilder strings.Builder
-	for _, config := range configs {
-		marker := " "
-		if config.Name == currentConfig {
-			marker = "*"
-		}
-
-		line := fmt.Sprintf("%s %s", marker, config.Name)
-		if config.Properties.Core.Account != "" {
-			line += fmt.Sprintf(" (%s)", config.Properties.Core.Account)
-		}
-		if config.Properties.Core.Project != "" {
-			line += fmt.Sprintf(" [%s]", config.Properties.Core.Project)
-		}
-
-		inputBuilder.WriteString(line + "\n")
-	}
-
 	selfCmd, err := getSelfCommand()
 	if err != nil {
 		selfCmd = "gcloudctx"
 	}
 
-	fzfArgs := buildFzfArgs(selfCmd)
-	cmd := exec.Command("fzf", fzfArgs...)
-
+	cmd := exec.Command("fzf", buildFzfArgs(selfCmd)...)
 	// Feed the list on stdin rather than via FZF_DEFAULT_COMMAND, which fzf runs
 	// through a shell, so configuration names and accounts are never
 	// interpolated into a shell command.
-	cmd.Stdin = strings.NewReader(inputBuilder.String())
+	cmd.Stdin = strings.NewReader(formatFzfInput(configs, currentConfig))
 	cmd.Stderr = os.Stderr
 
 	var output bytes.Buffer
+
 	cmd.Stdout = &output
 
 	if err := cmd.Run(); err != nil {
-		// fzf exits with 130 when the user cancels with ESC or Ctrl-C.
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			if exitErr.ExitCode() == 130 {
-				return "", ErrSelectionCanceled
-			}
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr.ExitCode() == fzfExitInterrupted {
+			return "", ErrSelectionCanceled
 		}
+
 		return "", fmt.Errorf("fzf selection failed: %w", err)
 	}
 
@@ -127,5 +144,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
+
 	return defaultValue
 }

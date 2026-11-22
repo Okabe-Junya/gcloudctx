@@ -5,20 +5,21 @@ package gcloud
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
-// Configuration represents a gcloud configuration
+// Configuration represents a gcloud configuration.
 type Configuration struct {
 	Name       string     `json:"name"`
 	IsActive   bool       `json:"is_active"`
 	Properties Properties `json:"properties"`
 }
 
-// Properties represents configuration properties
+// Properties represents configuration properties.
 type Properties struct {
-	Core    CoreProperties    `json:"core,omitempty"`
-	Compute ComputeProperties `json:"compute,omitempty"`
+	Core    CoreProperties    `json:"core"`
+	Compute ComputeProperties `json:"compute"`
 }
 
 // Bool handles gcloud's JSON output where boolean values may be
@@ -30,8 +31,9 @@ type Bool bool
 func (b *Bool) UnmarshalJSON(data []byte) error {
 	var raw any
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
+		return fmt.Errorf("failed to decode boolean value: %w", err)
 	}
+
 	switch v := raw.(type) {
 	case bool:
 		*b = Bool(v)
@@ -40,17 +42,18 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 	default:
 		*b = false
 	}
+
 	return nil
 }
 
-// CoreProperties represents core configuration properties
+// CoreProperties represents core configuration properties.
 type CoreProperties struct {
 	Account            string `json:"account,omitempty"`
 	Project            string `json:"project,omitempty"`
 	DisableUsageReport Bool   `json:"disable_usage_reporting,omitempty"`
 }
 
-// ComputeProperties represents compute configuration properties
+// ComputeProperties represents compute configuration properties.
 type ComputeProperties struct {
 	Region string `json:"region,omitempty"`
 	Zone   string `json:"zone,omitempty"`
